@@ -190,6 +190,11 @@ app.get("/api/matches/:telegramId", async (req, res) => {
   }
 });
 
+// Serve React App for any unknown routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend/dist/index.html"));
+});
+
 // Start the server and bot
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
