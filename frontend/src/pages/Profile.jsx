@@ -1,72 +1,70 @@
-import { useState } from 'react'
-import axios from 'axios'
-import Onboarding from './Onboarding'
+import React from 'react';
 
-export default function Profile({ user, onUpdate }) {
-  const [isEditing, setIsEditing] = useState(false)
-
-  if (isEditing) {
-    return (
-      <div style={{ paddingBottom: '100px' }}>
-        <button 
-          className="btn" 
-          style={{ background: 'transparent', color: 'var(--text-secondary)', padding: '10px 20px' }}
-          onClick={() => setIsEditing(false)}
-        >
-          ← Cancel
-        </button>
-        <Onboarding 
-          user={user} 
-          onComplete={(updatedUser) => {
-            onUpdate(updatedUser)
-            setIsEditing(false)
-          }} 
-        />
-      </div>
-    )
-  }
+const Profile = ({ user }) => {
+  // Use user data or dummy data
+  const profileData = {
+    name: user?.first_name || 'Alex',
+    age: 25,
+    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop',
+    bio: 'Passionate about design and coffee. Always looking for the next adventure.',
+    interests: ['🎨 Art', '☕ Coffee', '✈️ Travel', '📸 Photography'],
+    likesReceived: 42
+  };
 
   return (
-    <div style={{ padding: '20px', paddingBottom: '100px' }}>
-      <div className="glass-panel" style={{ textAlign: 'center' }}>
-        <img 
-          src={user.photoUrl} 
-          alt={user.firstName}
-          style={{
-            width: '120px',
-            height: '120px',
-            borderRadius: '50%',
-            objectFit: 'cover',
-            border: '3px solid var(--accent)',
-            marginBottom: '16px'
-          }}
-        />
-        <h2 style={{ margin: '0 0 8px 0' }}>{user.firstName} {user.lastName}</h2>
-        <p style={{ color: 'var(--text-secondary)', margin: '0 0 24px 0' }}>@{user.username}</p>
+    <div className="profile-page">
+      <div className="profile-header">
+        <img src={profileData.photoUrl} alt="Cover" className="profile-cover" />
+        <div className="profile-cover-gradient"></div>
+      </div>
+
+      <div className="profile-details">
+        <div className="profile-name-age">
+          <h1>{profileData.name}</h1>
+          <span>{profileData.age}</span>
+        </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px', textAlign: 'left' }}>
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Age</span>
-            <div style={{ fontWeight: '600' }}>{user.age}</div>
+        <button className="edit-profile-btn">
+          Edit Profile
+        </button>
+
+        <div className="profile-stats">
+          <div className="stat-item">
+            <span className="stat-value">{profileData.likesReceived}</span>
+            <span className="stat-label">Likes</span>
           </div>
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Gender</span>
-            <div style={{ fontWeight: '600', textTransform: 'capitalize' }}>{user.gender}</div>
+          <div className="stat-item">
+            <span className="stat-value">5</span>
+            <span className="stat-label">Matches</span>
           </div>
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px', gridColumn: '1 / -1' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Looking For</span>
-            <div style={{ fontWeight: '600', textTransform: 'capitalize' }}>{user.lookingFor}</div>
-          </div>
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px', gridColumn: '1 / -1' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Bio</span>
-            <div style={{ fontWeight: '400', lineHeight: '1.5' }}>{user.bio || "No bio yet."}</div>
+          <div className="stat-item">
+            <span className="stat-value">Top 10%</span>
+            <span className="stat-label">Ranking</span>
           </div>
         </div>
 
-        <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setIsEditing(true)}>
-          Edit Profile
-        </button>
+        <div className="profile-section">
+          <h3>About Me</h3>
+          <p>{profileData.bio}</p>
+        </div>
+
+        <div className="profile-section">
+          <h3>Interests</h3>
+          <div className="tags-container">
+            {profileData.interests.map(tag => (
+              <div key={tag} className="tag selected">{tag}</div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="profile-section" style={{marginTop: '40px', paddingBottom: '20px'}}>
+          <button className="match-btn btn-secondary" style={{width: '100%', borderColor: 'var(--danger)', color: 'var(--danger)'}}>
+            Delete Account
+          </button>
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default Profile;

@@ -1,30 +1,44 @@
-export const initTelegramApp = () => {
-  const WebApp = window.Telegram?.WebApp;
-  if (WebApp) {
-    WebApp.ready();
-    WebApp.expand();
-    if (WebApp.setHeaderColor) {
-      WebApp.setHeaderColor('#0f172a');
-    }
-  } else {
-    console.warn('Telegram WebApp not available (running outside Telegram)');
+export const getTelegramData = () => {
+  if (window.Telegram && window.Telegram.WebApp) {
+    const webApp = window.Telegram.WebApp;
+    // Tell Telegram app we are ready
+    webApp.ready();
+    // Expand to full height
+    webApp.expand();
+    // Return relevant data
+    return {
+      initData: webApp.initData,
+      initDataUnsafe: webApp.initDataUnsafe,
+      user: webApp.initDataUnsafe?.user || null,
+      themeParams: webApp.themeParams,
+      colorScheme: webApp.colorScheme,
+      close: () => webApp.close(),
+      sendData: (data) => webApp.sendData(data),
+      showAlert: (msg) => webApp.showAlert(msg),
+      showConfirm: (msg, callback) => webApp.showConfirm(msg, callback),
+      showPopup: (params, callback) => webApp.showPopup(params, callback),
+    };
   }
-}
-
-export const getUser = () => {
-  const WebApp = window.Telegram?.WebApp;
-  if (WebApp?.initDataUnsafe?.user) {
-    return WebApp.initDataUnsafe.user;
-  }
+  
   // Fallback for local development outside Telegram
   return {
-    id: 123456,
-    first_name: "Test",
-    last_name: "User",
-    username: "testuser"
+    initData: '',
+    initDataUnsafe: {},
+    user: {
+      id: 123456789,
+      first_name: 'Test',
+      last_name: 'User',
+      username: 'testuser',
+      language_code: 'en'
+    },
+    themeParams: {},
+    colorScheme: 'dark',
+    close: () => console.log('Close WebApp'),
+    sendData: (data) => console.log('Send Data:', data),
+    showAlert: (msg) => alert(msg),
+    showConfirm: (msg, cb) => { if(confirm(msg)) cb(true); else cb(false); },
+    showPopup: (params, cb) => { alert(params.message); if (cb) cb('ok'); },
   };
-}
+};
 
-export const getTelegramId = () => {
-  return getUser().id;
-}
+export const API_URL = window.location.origin + '/api';

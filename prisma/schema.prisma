@@ -18,6 +18,12 @@ model User {
   lookingFor  String?  // 'male', 'female', or 'both'
   bio         String?
   photoUrl    String?
+  interests   String[] // array of interest tags
+  photos      String[] // array of photo URLs
+  isBoosted   Boolean  @default(false)
+  boostExpiry DateTime?
+  isOnline    Boolean  @default(false)
+  lastSeen    DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -26,13 +32,16 @@ model User {
   
   matches1      Match[] @relation("MatchUser1")
   matches2      Match[] @relation("MatchUser2")
+
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model Like {
   id         Int      @id @default(autoincrement())
   fromUserId Int
   toUserId   Int
-  action     String   // 'like' or 'pass'
+  action     String   // 'like', 'pass', or 'superlike'
   createdAt  DateTime @default(now())
 
   fromUser User @relation("LikesGiven", fields: [fromUserId], references: [id])
@@ -47,8 +56,23 @@ model Match {
   user2Id   Int
   createdAt DateTime @default(now())
 
-  user1 User @relation("MatchUser1", fields: [user1Id], references: [id])
-  user2 User @relation("MatchUser2", fields: [user2Id], references: [id])
+  user1    User      @relation("MatchUser1", fields: [user1Id], references: [id])
+  user2    User      @relation("MatchUser2", fields: [user2Id], references: [id])
+  messages Message[]
 
   @@unique([user1Id, user2Id])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  matchId   Int
+  senderId  Int
+  receiverId Int
+  text      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  match    Match @relation(fields: [matchId], references: [id])
+  sender   User  @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id])
 }
