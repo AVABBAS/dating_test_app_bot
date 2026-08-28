@@ -22,6 +22,21 @@ app.post("/api/user", async (req, res) => {
 
   try {
     let user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
+    
+    // Automatically fetch Telegram profile photo
+    let tgPhotoUrl = null;
+    try {
+      const photos = await bot.api.getUserProfilePhotos(telegramId);
+      if (photos.total_count > 0) {
+        const photoSizes = photos.photos[0];
+        const fileId = photoSizes[photoSizes.length - 1].file_id; // Get highest resolution
+        const file = await bot.api.getFile(fileId);
+        tgPhotoUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${file.file_path}`;
+      }
+    } catch (photoErr) {
+      console.error("Error fetching Telegram photo:", photoErr);
+    }
+
     if (!user) {
       user = await prisma.user.create({
         data: {
@@ -29,9 +44,17 @@ app.post("/api/user", async (req, res) => {
           username,
           firstName,
           lastName,
+          photoUrl: tgPhotoUrl
         },
       });
+    } else if (!user.photoUrl && tgPhotoUrl) {
+      // If user exists but has no photo, update it
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { photoUrl: tgPhotoUrl }
+      });
     }
+
     // Update online status
     await prisma.user.update({
       where: { id: user.id },

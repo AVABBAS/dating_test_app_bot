@@ -5,13 +5,13 @@ import { API_URL } from '../telegram';
 const Onboarding = ({ user, onComplete }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    photoUrl: '',
-    name: user?.first_name || '',
-    age: '',
-    gender: 'other',
-    bio: '',
-    interests: [],
-    lookingFor: 'everyone'
+    photoUrl: user?.photoUrl || '',
+    name: user?.first_name || user?.firstName || '',
+    age: user?.age || '',
+    gender: user?.gender || 'other',
+    bio: user?.bio || '',
+    interests: user?.interests || [],
+    lookingFor: user?.lookingFor || 'everyone'
   });
 
   const totalSteps = 4;
