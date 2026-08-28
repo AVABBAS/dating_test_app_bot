@@ -1,16 +1,19 @@
-import WebApp from '@twa-dev/sdk'
-
 export const initTelegramApp = () => {
-  WebApp.ready();
-  WebApp.expand();
-  // Optional: Set header color to match our dark theme
-  if (WebApp.setHeaderColor) {
-    WebApp.setHeaderColor('#0f172a');
+  const WebApp = window.Telegram?.WebApp;
+  if (WebApp) {
+    WebApp.ready();
+    WebApp.expand();
+    if (WebApp.setHeaderColor) {
+      WebApp.setHeaderColor('#0f172a');
+    }
+  } else {
+    console.warn('Telegram WebApp not available (running outside Telegram)');
   }
 }
 
 export const getUser = () => {
-  if (WebApp.initDataUnsafe?.user) {
+  const WebApp = window.Telegram?.WebApp;
+  if (WebApp?.initDataUnsafe?.user) {
     return WebApp.initDataUnsafe.user;
   }
   // Fallback for local development outside Telegram

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Heart, X } from 'lucide-react'
 
-const API_URL = 'https://datingtestappbot-production.up.railway.app/api'
+const API_URL = window.location.origin + '/api'
 
 export default function Discover({ user }) {
   const [profiles, setProfiles] = useState([])
