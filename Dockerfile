@@ -1,20 +1,17 @@
 FROM node:20-alpine
 WORKDIR /app
 
-# Copy package files
+# 1. Build frontend
+COPY frontend/package*.json ./frontend/
+RUN cd frontend && npm install
+COPY frontend/ ./frontend/
+RUN cd frontend && npm run build
+
+# 2. Build backend
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
-
-# Copy source code and Prisma schema
 COPY . .
-
-# Generate Prisma Client
 RUN npx prisma generate
 
-# Expose port
 EXPOSE 3000
-
-# Start server
 CMD ["node", "server.js"]
