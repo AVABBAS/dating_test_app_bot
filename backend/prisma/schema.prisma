@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  telegramId  String   @unique
+  username    String?
+  firstName   String?
+  lastName    String?
+  age         Int?
+  gender      String?  // 'male' or 'female'
+  lookingFor  String?  // 'male', 'female', or 'both'
+  bio         String?
+  photoUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  likesGiven    Like[] @relation("LikesGiven")
+  likesReceived Like[] @relation("LikesReceived")
+  
+  matches1      Match[] @relation("MatchUser1")
+  matches2      Match[] @relation("MatchUser2")
+}
+
+model Like {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int
+  toUserId   Int
+  action     String   // 'like' or 'pass'
+  createdAt  DateTime @default(now())
+
+  fromUser User @relation("LikesGiven", fields: [fromUserId], references: [id])
+  toUser   User @relation("LikesReceived", fields: [toUserId], references: [id])
+
+  @@unique([fromUserId, toUserId])
+}
+
+model Match {
+  id        Int      @id @default(autoincrement())
+  user1Id   Int
+  user2Id   Int
+  createdAt DateTime @default(now())
+
+  user1 User @relation("MatchUser1", fields: [user1Id], references: [id])
+  user2 User @relation("MatchUser2", fields: [user2Id], references: [id])
+
+  @@unique([user1Id, user2Id])
+}
