@@ -1,24 +1,35 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { API_URL } from '../telegram';
+import { Camera, CheckCircle } from 'lucide-react';
 
 const Onboarding = ({ user, onComplete }) => {
   const [step, setStep] = useState(1);
+
+  // Pre-fill with Telegram photo if available (fetched by server)
   const [formData, setFormData] = useState({
     photoUrl: user?.photoUrl || '',
-    name: user?.first_name || user?.firstName || '',
+    name: user?.firstName || user?.first_name || '',
     age: user?.age || '',
-    gender: user?.gender || 'other',
+    gender: user?.gender || 'female',
     bio: user?.bio || '',
     interests: user?.interests || [],
-    lookingFor: user?.lookingFor || 'everyone'
+    lookingFor: user?.lookingFor || 'everyone',
   });
 
+  // For photo editing: toggle between telegram photo and custom URL
+  const [useCustomPhoto, setUseCustomPhoto] = useState(false);
+  const [customPhotoUrl, setCustomPhotoUrl] = useState('');
+
+  const telegramPhoto = user?.photoUrl || '';
+  const effectivePhoto = useCustomPhoto ? customPhotoUrl : (formData.photoUrl || telegramPhoto);
+
   const totalSteps = 4;
+
   const interestsList = [
-    '🎵 Music', '🎬 Movies', '✈️ Travel', '📚 Reading', '🏋️ Fitness', 
-    '🎨 Art', '🍳 Cooking', '📸 Photography', '🎮 Gaming', '🧘 Yoga', 
-    '⚽ Sports', '🐱 Pets', '☕ Coffee', '🏔️ Hiking', '💻 Tech', '🎭 Theater'
+    '🎵 موسیقی', '🎬 فیلم', '✈️ سفر', '📚 کتاب', '🏋️ ورزش',
+    '🎨 هنر', '🍳 آشپزی', '📸 عکاسی', '🎮 بازی', '🧘 یوگا',
+    '⚽ فوتبال', '🐱 حیوانات', '☕ قهوه', '🏔️ طبیعت', '💻 تکنولوژی', '🎭 تئاتر'
   ];
 
   const handleNext = () => {
@@ -42,113 +53,176 @@ const Onboarding = ({ user, onComplete }) => {
 
   const submitData = async () => {
     try {
+      const finalPhoto = useCustomPhoto ? customPhotoUrl : formData.photoUrl;
       await axios.put(`${API_URL}/user/${user?.telegramId || '123'}`, {
-        ...formData,
-        onboardingComplete: true
+        photoUrl: finalPhoto,
+        age: formData.age,
+        gender: formData.gender,
+        bio: formData.bio,
+        interests: formData.interests,
+        lookingFor: formData.lookingFor,
+        firstName: formData.name,
       });
       onComplete();
     } catch (err) {
       console.error('Onboarding failed:', err);
-      onComplete(); // fallback for dev
+      onComplete();
     }
+  };
+
+  const canGoNext = () => {
+    if (step === 1) return effectivePhoto.length > 0;
+    if (step === 2) return formData.name.trim().length > 0 && formData.age > 0;
+    return true;
   };
 
   return (
     <div className="onboarding-page">
+      {/* Progress Bar */}
       <div className="progress-bar-container">
         {[...Array(totalSteps)].map((_, i) => (
           <div key={i} className="progress-segment">
-            <div className={`progress-fill ${step > i ? 'filled' : ''}`}></div>
+            <div className={`progress-fill ${step > i ? 'filled' : ''}`} />
           </div>
         ))}
       </div>
 
+      {/* ── Step 1: Photo ── */}
       {step === 1 && (
         <div className="step-container">
-          <h2 className="step-title">Add your photo</h2>
-          <p className="step-subtitle">Show your best self to the world.</p>
-          
-          <div className="photo-preview">
-            {formData.photoUrl ? (
-              <img src={formData.photoUrl} alt="Preview" />
+          <h2 className="step-title">عکس پروفایل</h2>
+          <p className="step-subtitle">بهترین تصویر خودت رو انتخاب کن.</p>
+
+          {/* Photo Preview */}
+          <div className="ob-photo-wrapper">
+            {effectivePhoto ? (
+              <img src={effectivePhoto} alt="Preview" className="ob-photo-preview" />
             ) : (
-              <span style={{color: 'var(--text-secondary)'}}>No photo</span>
+              <div className="ob-photo-empty">
+                <Camera size={40} color="var(--text-secondary)" />
+                <span>عکسی انتخاب نشده</span>
+              </div>
+            )}
+
+            {/* Auto badge */}
+            {telegramPhoto && !useCustomPhoto && (
+              <div className="ob-auto-badge">
+                <CheckCircle size={14} />
+                عکس تلگرام
+              </div>
             )}
           </div>
-          
-          <div className="input-group">
-            <label>Photo URL</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="https://..."
-              value={formData.photoUrl}
-              onChange={e => setFormData({...formData, photoUrl: e.target.value})}
-            />
-          </div>
+
+          {/* Use telegram photo */}
+          {telegramPhoto && (
+            <div className="ob-photo-options">
+              <button
+                className={`ob-photo-opt ${!useCustomPhoto ? 'active' : ''}`}
+                onClick={() => setUseCustomPhoto(false)}
+              >
+                📷 استفاده از عکس تلگرام
+              </button>
+              <button
+                className={`ob-photo-opt ${useCustomPhoto ? 'active' : ''}`}
+                onClick={() => setUseCustomPhoto(true)}
+              >
+                🔗 آدرس عکس دلخواه
+              </button>
+            </div>
+          )}
+
+          {/* Custom URL input */}
+          {(useCustomPhoto || !telegramPhoto) && (
+            <div className="input-group" style={{ marginTop: 12 }}>
+              <label>آدرس عکس (URL)</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="https://..."
+                value={useCustomPhoto ? customPhotoUrl : formData.photoUrl}
+                onChange={e => {
+                  if (useCustomPhoto) setCustomPhotoUrl(e.target.value);
+                  else setFormData({ ...formData, photoUrl: e.target.value });
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 
+      {/* ── Step 2: Basic Info ── */}
       {step === 2 && (
         <div className="step-container">
-          <h2 className="step-title">Basic info</h2>
-          <p className="step-subtitle">Tell us a bit about yourself.</p>
-          
+          <h2 className="step-title">اطلاعات پایه</h2>
+          <p className="step-subtitle">درباره خودت بگو.</p>
+
           <div className="input-group">
-            <label>Name</label>
-            <input 
-              type="text" 
-              className="form-input" 
+            <label>اسم</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="اسمت چیه؟"
               value={formData.name}
-              onChange={e => setFormData({...formData, name: e.target.value})}
-            />
-          </div>
-          
-          <div className="input-group">
-            <label>Age</label>
-            <input 
-              type="number" 
-              className="form-input" 
-              value={formData.age}
-              onChange={e => setFormData({...formData, age: e.target.value})}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
 
           <div className="input-group">
-            <label>Gender</label>
-            <select 
+            <label>سن</label>
+            <input
+              type="number"
               className="form-input"
-              value={formData.gender}
-              onChange={e => setFormData({...formData, gender: e.target.value})}
-            >
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
+              placeholder="چند سالته؟"
+              min="18"
+              max="80"
+              value={formData.age}
+              onChange={e => setFormData({ ...formData, age: e.target.value })}
+            />
+          </div>
+
+          <div className="input-group">
+            <label>جنسیت</label>
+            <div className="gender-options">
+              {[
+                { value: 'male', label: '👨 مرد' },
+                { value: 'female', label: '👩 زن' },
+                { value: 'other', label: '🌈 سایر' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  className={`gender-opt ${formData.gender === opt.value ? 'active' : ''}`}
+                  onClick={() => setFormData({ ...formData, gender: opt.value })}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
+      {/* ── Step 3: Bio & Interests ── */}
       {step === 3 && (
         <div className="step-container">
-          <h2 className="step-title">Your Bio & Interests</h2>
-          <p className="step-subtitle">What makes you unique?</p>
-          
+          <h2 className="step-title">بیو و علاقه‌مندی‌ها</h2>
+          <p className="step-subtitle">چی تو رو منحصربه‌فرد می‌کنه؟</p>
+
           <div className="input-group">
-            <label>Bio</label>
-            <textarea 
-              className="form-input" 
-              placeholder="Write a little about yourself..."
+            <label>بیو</label>
+            <textarea
+              className="form-input"
+              rows={3}
+              placeholder="چند جمله درباره خودت بنویس..."
               value={formData.bio}
-              onChange={e => setFormData({...formData, bio: e.target.value})}
+              onChange={e => setFormData({ ...formData, bio: e.target.value })}
             />
           </div>
-          
+
           <div className="input-group">
-            <label>Interests (Up to 5)</label>
+            <label>علاقه‌مندی‌ها <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>(حداکثر ۵ تا)</span></label>
             <div className="tags-container">
               {interestsList.map(tag => (
-                <div 
+                <div
                   key={tag}
                   className={`tag ${formData.interests.includes(tag) ? 'selected' : ''}`}
                   onClick={() => toggleInterest(tag)}
@@ -161,38 +235,60 @@ const Onboarding = ({ user, onComplete }) => {
         </div>
       )}
 
+      {/* ── Step 4: Preferences ── */}
       {step === 4 && (
         <div className="step-container">
-          <h2 className="step-title">Preferences</h2>
-          <p className="step-subtitle">Who are you looking to meet?</p>
-          
+          <h2 className="step-title">ترجیحات</h2>
+          <p className="step-subtitle">دنبال چه کسی می‌گردی؟</p>
+
           <div className="input-group">
-            <label>Looking for</label>
-            <select 
-              className="form-input"
-              value={formData.lookingFor}
-              onChange={e => setFormData({...formData, lookingFor: e.target.value})}
-            >
-              <option value="men">Men</option>
-              <option value="women">Women</option>
-              <option value="everyone">Everyone</option>
-            </select>
+            <label>دنبال</label>
+            <div className="gender-options">
+              {[
+                { value: 'men', label: '👨 مرد' },
+                { value: 'women', label: '👩 زن' },
+                { value: 'everyone', label: '💞 همه' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  className={`gender-opt ${formData.lookingFor === opt.value ? 'active' : ''}`}
+                  onClick={() => setFormData({ ...formData, lookingFor: opt.value })}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Summary preview */}
+          <div className="ob-summary">
+            <img src={effectivePhoto} alt="" className="ob-summary-photo" />
+            <div className="ob-summary-info">
+              <strong>{formData.name || 'بدون اسم'}</strong>، {formData.age || '?'} ساله
+              <div className="ob-summary-tags">
+                {formData.interests.slice(0, 3).map((t, i) => (
+                  <span key={i} className="card-tag">{t}</span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Nav Buttons */}
       <div className="onboarding-buttons">
         {step > 1 && (
-          <button className="match-btn btn-secondary" style={{width: '30%'}} onClick={handleBack}>
-            Back
+          <button className="match-btn btn-secondary" style={{ width: '30%' }} onClick={handleBack}>
+            برگشت
           </button>
         )}
-        <button 
-          className="match-btn btn-primary" 
-          style={{flex: 1, margin: 0}}
+        <button
+          className="match-btn btn-primary"
+          style={{ flex: 1, margin: 0, opacity: canGoNext() ? 1 : 0.5 }}
           onClick={handleNext}
+          disabled={!canGoNext()}
         >
-          {step === totalSteps ? 'Start Swiping ✨' : 'Next'}
+          {step === totalSteps ? 'شروع کن ✨' : 'بعدی'}
         </button>
       </div>
     </div>

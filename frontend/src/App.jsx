@@ -64,27 +64,26 @@ const AppContent = () => {
           return;
         }
 
-        // Try to fetch user from backend
+        // Register / fetch user — server will auto-fetch Telegram profile photo
         const response = await axios.post(`${API_URL}/user`, {
           telegramId: tgData.user.id,
-          first_name: tgData.user.first_name,
-          username: tgData.user.username,
+          firstName: tgData.user.first_name,
+          lastName: tgData.user.last_name || '',
+          username: tgData.user.username || '',
         });
 
         setUser(response.data);
 
-        // Check if onboarding is complete (if age is set)
+        // Check if onboarding is complete (age must be set)
         const isComplete = response.data.age != null;
         if (!isComplete && location.pathname !== '/onboarding') {
           navigate('/onboarding', { replace: true });
         }
       } catch (err) {
         console.error('App init error:', err);
-        // Fallback for UI testing
         const dummyUser = { telegramId: 123, age: null };
         setUser(dummyUser);
-        const isCompleteFallback = dummyUser.age != null;
-        if (!isCompleteFallback && location.pathname !== '/onboarding') {
+        if (location.pathname !== '/onboarding') {
           navigate('/onboarding', { replace: true });
         }
       } finally {
