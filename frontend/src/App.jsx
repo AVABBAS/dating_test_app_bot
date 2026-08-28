@@ -9,7 +9,7 @@ import Matches from './pages/Matches'
 import Profile from './pages/Profile'
 import Onboarding from './pages/Onboarding'
 
-const API_URL = '/api'
+const API_URL = 'https://datingtestappbot-production.up.railway.app/api'
 
 function App() {
   const [userState, setUserState] = useState(null)

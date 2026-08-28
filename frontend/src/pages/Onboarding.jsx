@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
 
-const API_URL = '/api'
+const API_URL = 'https://datingtestappbot-production.up.railway.app/api'
 
 export default function Onboarding({ user, onComplete }) {
   const [formData, setFormData] = useState({

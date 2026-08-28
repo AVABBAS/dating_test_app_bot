@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { WebApp } from '@twa-dev/sdk'
 
-const API_URL = '/api'
+const API_URL = 'https://datingtestappbot-production.up.railway.app/api'
 
 export default function Matches({ user }) {
   const [matches, setMatches] = useState([])
