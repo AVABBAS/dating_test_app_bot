@@ -13,6 +13,16 @@ app.use(express.json());
 const path = require('path');
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
 
+// Map the "lookingFor" preference (men/women/everyone or male/female/both)
+// to the actual `gender` value stored on candidate profiles.
+function lookingForToGender(lookingFor) {
+  if (!lookingFor) return null;
+  const v = lookingFor.toLowerCase();
+  if (v === 'men' || v === 'male') return 'male';
+  if (v === 'women' || v === 'female') return 'female';
+  return null; // 'everyone' / 'both' => no gender filter
+}
+
 // ==================== API Endpoints ====================
 
 // 1. Get Profile or Create New User
@@ -107,8 +117,9 @@ app.get("/api/discover/:telegramId", async (req, res) => {
     }).then(likes => likes.map(l => l.toUserId));
 
     let genderQuery = {};
-    if (currentUser.lookingFor && currentUser.lookingFor !== 'both') {
-      genderQuery = { gender: currentUser.lookingFor };
+    const targetGender = lookingForToGender(currentUser.lookingFor);
+    if (targetGender) {
+      genderQuery = { gender: targetGender };
     }
 
     // Prioritize boosted profiles
@@ -170,7 +181,7 @@ app.post("/api/action", async (req, res) => {
       if (mutualLike && (mutualLike.action === 'like' || mutualLike.action === 'superlike')) {
         // It's a match!
         // Check if match already exists
-        const existingMatch = await prisma.match.findFirst({
+        let existingMatch = await prisma.match.findFirst({
           where: {
             OR: [
               { user1Id: fromUser.id, user2Id: parseInt(toUserId) },
@@ -180,7 +191,7 @@ app.post("/api/action", async (req, res) => {
         });
 
         if (!existingMatch) {
-          await prisma.match.create({
+          existingMatch = await prisma.match.create({
             data: {
               user1Id: fromUser.id,
               user2Id: parseInt(toUserId)
@@ -197,6 +208,7 @@ app.post("/api/action", async (req, res) => {
 
         return res.json({ 
           match: true, 
+          matchId: existingMatch.id,
           matchedUser: {
             id: toUser.id,
             firstName: toUser.firstName,
@@ -372,22 +384,29 @@ app.post("/api/boost/:telegramId", async (req, res) => {
   }
 });
 
-// 9. Explore Profiles (grid view, all profiles)
+// 9. Explore Profiles (grid view, browsable directory of all profiles)
 app.get("/api/explore/:telegramId", async (req, res) => {
   const { telegramId } = req.params;
-  const { category } = req.query; // 'all', 'online', 'new', 'popular'
+  const { category, search } = req.query; // category: 'all' | 'online' | 'new' | 'popular'
 
   try {
     const currentUser = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
     if (!currentUser) return res.status(404).json({ error: "User not found" });
 
+    // Respect the user's dating preference, same as Discover, so Explore
+    // only surfaces relevant profiles.
+    let genderQuery = {};
+    const targetGender = lookingForToGender(currentUser.lookingFor);
+    if (targetGender) {
+      genderQuery = { gender: targetGender };
+    }
+
     let where = {
       id: { not: currentUser.id },
       age: { not: null },
-      photoUrl: { not: null }
+      photoUrl: { not: null },
+      ...genderQuery
     };
-
-    let orderBy = { createdAt: 'desc' };
 
     if (category === 'online') {
       where.isOnline = true;
@@ -396,23 +415,60 @@ app.get("/api/explore/:telegramId", async (req, res) => {
       where.createdAt = { gte: oneWeekAgo };
     }
 
-    const profiles = await prisma.user.findMany({
-      where,
-      orderBy,
-      take: 40,
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        age: true,
-        gender: true,
-        photoUrl: true,
-        bio: true,
-        interests: true,
-        isOnline: true,
-        isBoosted: true
-      }
-    });
+    if (search && search.trim()) {
+      where.OR = [
+        { firstName: { contains: search.trim(), mode: 'insensitive' } },
+        { bio: { contains: search.trim(), mode: 'insensitive' } }
+      ];
+    }
+
+    const selectFields = {
+      id: true,
+      firstName: true,
+      lastName: true,
+      age: true,
+      gender: true,
+      photoUrl: true,
+      photos: true,
+      bio: true,
+      interests: true,
+      isOnline: true,
+      isBoosted: true,
+      createdAt: true
+    };
+
+    let profiles;
+
+    if (category === 'popular') {
+      // "Popular" = most liked/super-liked profiles. Rank candidate ids by
+      // received-likes count, then fetch the matching user records.
+      const likeCounts = await prisma.like.groupBy({
+        by: ['toUserId'],
+        where: { action: { in: ['like', 'superlike'] } },
+        _count: { toUserId: true }
+      });
+      const rankedIds = likeCounts
+        .sort((a, b) => b._count.toUserId - a._count.toUserId)
+        .map(l => l.toUserId);
+
+      const popularWhere = { ...where, id: { ...where.id, in: rankedIds.length ? rankedIds : [-1] } };
+      const popularProfiles = rankedIds.length
+        ? await prisma.user.findMany({ where: popularWhere, select: selectFields })
+        : [];
+
+      const order = new Map(rankedIds.map((id, idx) => [id, idx]));
+      profiles = popularProfiles.sort((a, b) => order.get(a.id) - order.get(b.id)).slice(0, 40);
+    } else {
+      profiles = await prisma.user.findMany({
+        where,
+        orderBy: [
+          { isBoosted: 'desc' },
+          { createdAt: 'desc' }
+        ],
+        take: 40,
+        select: selectFields
+      });
+    }
 
     res.json(profiles);
   } catch (error) {
