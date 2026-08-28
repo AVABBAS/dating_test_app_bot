@@ -1,68 +1,398 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { API_URL } from '../telegram';
+import {
+  Edit3, Check, X, Camera, Heart, Star, Users,
+  ChevronRight, Bell, Shield, LogOut, Trash2,
+  MapPin, Zap, ShieldCheck, Settings, Info
+} from 'lucide-react';
+
+const INTERESTS_LIST = [
+  '🎵 موسیقی', '🎬 فیلم', '✈️ سفر', '📚 کتاب', '🏋️ ورزش',
+  '🎨 هنر', '🍳 آشپزی', '📸 عکاسی', '🎮 بازی', '🧘 یوگا',
+  '⚽ فوتبال', '🐱 حیوانات', '☕ قهوه', '🏔️ طبیعت', '💻 تکنولوژی', '🎭 تئاتر'
+];
 
 const Profile = ({ user }) => {
-  // Use user data or dummy data
-  const profileData = {
-    name: user?.first_name || 'Alex',
-    age: 25,
-    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop',
-    bio: 'Passionate about design and coffee. Always looking for the next adventure.',
-    interests: ['🎨 Art', '☕ Coffee', '✈️ Travel', '📸 Photography'],
-    likesReceived: 42
+  const [profileData, setProfileData] = useState(null);
+  const [stats, setStats] = useState({ likes: 0, superLikes: 0, matches: 0 });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'settings'
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      setProfileData(user);
+      setEditForm({
+        photoUrl: user.photoUrl || '',
+        firstName: user.firstName || '',
+        age: user.age || '',
+        gender: user.gender || '',
+        bio: user.bio || '',
+        interests: user.interests || [],
+        lookingFor: user.lookingFor || 'everyone',
+      });
+      fetchStats();
+    }
+  }, [user]);
+
+  const fetchStats = async () => {
+    if (!user?.telegramId) return;
+    try {
+      const [likesRes, matchesRes] = await Promise.all([
+        axios.get(`${API_URL}/likes-count/${user.telegramId}`),
+        axios.get(`${API_URL}/matches/${user.telegramId}`),
+      ]);
+      setStats({
+        likes: likesRes.data.likes || 0,
+        superLikes: likesRes.data.superLikes || 0,
+        matches: matchesRes.data.length || 0,
+      });
+    } catch { /* silent */ }
   };
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      const res = await axios.put(`${API_URL}/user/${user.telegramId}`, {
+        photoUrl: editForm.photoUrl,
+        age: editForm.age,
+        gender: editForm.gender,
+        bio: editForm.bio,
+        interests: editForm.interests,
+        lookingFor: editForm.lookingFor,
+        firstName: editForm.firstName,
+      });
+      setProfileData(res.data);
+      setIsEditing(false);
+      showToast('پروفایل ذخیره شد ✓');
+    } catch {
+      showToast('خطا در ذخیره‌سازی', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleInterest = (tag) => {
+    if (editForm.interests.includes(tag)) {
+      setEditForm({ ...editForm, interests: editForm.interests.filter(i => i !== tag) });
+    } else if (editForm.interests.length < 5) {
+      setEditForm({ ...editForm, interests: [...editForm.interests, tag] });
+    }
+  };
+
+  const displayData = isEditing ? editForm : profileData;
+  const photo = displayData?.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop';
+
+  if (!profileData) {
+    return (
+      <div className="profile-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Heart size={40} color="var(--primary-color)" style={{ animation: 'pulse 1s infinite alternate' }} />
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div className={`pf-toast ${toast.type}`}>
+          {toast.type === 'success' ? <Check size={16} /> : <X size={16} />}
+          {toast.msg}
+        </div>
+      )}
+
+      {/* ── Cover Photo ── */}
       <div className="profile-header">
-        <img src={profileData.photoUrl} alt="Cover" className="profile-cover" />
-        <div className="profile-cover-gradient"></div>
+        <img src={photo} alt="Cover" className="profile-cover" onError={e => { e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop'; }} />
+        <div className="profile-cover-gradient" />
+
+        {/* Edit / Save / Cancel buttons */}
+        <div className="pf-header-actions">
+          {isEditing ? (
+            <>
+              <button className="pf-hdr-btn pf-cancel-btn" onClick={() => { setIsEditing(false); setEditForm({ photoUrl: profileData.photoUrl || '', firstName: profileData.firstName || '', age: profileData.age || '', gender: profileData.gender || '', bio: profileData.bio || '', interests: profileData.interests || [], lookingFor: profileData.lookingFor || 'everyone' }); }}>
+                <X size={18} /> لغو
+              </button>
+              <button className="pf-hdr-btn pf-save-btn" onClick={saveProfile} disabled={saving}>
+                {saving ? '...' : <><Check size={18} /> ذخیره</>}
+              </button>
+            </>
+          ) : (
+            <button className="pf-hdr-btn pf-edit-btn" onClick={() => setIsEditing(true)}>
+              <Edit3 size={18} /> ویرایش
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* ── Profile Details ── */}
       <div className="profile-details">
-        <div className="profile-name-age">
-          <h1>{profileData.name}</h1>
-          <span>{profileData.age}</span>
-        </div>
-        
-        <button className="edit-profile-btn">
-          Edit Profile
-        </button>
 
-        <div className="profile-stats">
-          <div className="stat-item">
-            <span className="stat-value">{profileData.likesReceived}</span>
-            <span className="stat-label">Likes</span>
+        {/* Name & Age */}
+        {isEditing ? (
+          <div className="pf-edit-name-row">
+            <input
+              className="pf-edit-input pf-name-input"
+              value={editForm.firstName}
+              onChange={e => setEditForm({ ...editForm, firstName: e.target.value })}
+              placeholder="اسم"
+            />
+            <input
+              className="pf-edit-input pf-age-input"
+              type="number"
+              value={editForm.age}
+              onChange={e => setEditForm({ ...editForm, age: e.target.value })}
+              placeholder="سن"
+              min="18" max="80"
+            />
           </div>
-          <div className="stat-item">
-            <span className="stat-value">5</span>
-            <span className="stat-label">Matches</span>
+        ) : (
+          <div className="profile-name-age">
+            <h1>{profileData.firstName || 'کاربر'}</h1>
+            <span>{profileData.age}</span>
+            {profileData.gender && <span className="pf-gender-badge">{profileData.gender === 'male' ? '👨' : profileData.gender === 'female' ? '👩' : '🌈'}</span>}
           </div>
-          <div className="stat-item">
-            <span className="stat-value">Top 10%</span>
-            <span className="stat-label">Ranking</span>
-          </div>
-        </div>
+        )}
 
-        <div className="profile-section">
-          <h3>About Me</h3>
-          <p>{profileData.bio}</p>
-        </div>
-
-        <div className="profile-section">
-          <h3>Interests</h3>
-          <div className="tags-container">
-            {profileData.interests.map(tag => (
-              <div key={tag} className="tag selected">{tag}</div>
-            ))}
+        {/* Photo URL edit */}
+        {isEditing && (
+          <div className="pf-photo-edit">
+            <Camera size={14} color="var(--text-secondary)" />
+            <input
+              className="pf-edit-input"
+              value={editForm.photoUrl}
+              onChange={e => setEditForm({ ...editForm, photoUrl: e.target.value })}
+              placeholder="آدرس عکس پروفایل (URL)..."
+              style={{ flex: 1 }}
+            />
           </div>
-        </div>
-        
-        <div className="profile-section" style={{marginTop: '40px', paddingBottom: '20px'}}>
-          <button className="match-btn btn-secondary" style={{width: '100%', borderColor: 'var(--danger)', color: 'var(--danger)'}}>
-            Delete Account
+        )}
+
+        {/* ── Tabs ── */}
+        <div className="pf-tabs">
+          <button className={`pf-tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
+            <Info size={15} /> پروفایل
+          </button>
+          <button className={`pf-tab ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+            <Settings size={15} /> تنظیمات
           </button>
         </div>
+
+        {/* ══════ PROFILE TAB ══════ */}
+        {activeTab === 'profile' && (
+          <>
+            {/* Stats */}
+            <div className="profile-stats">
+              <div className="stat-item">
+                <span className="stat-value">{stats.likes}</span>
+                <span className="stat-label">❤️ لایک</span>
+              </div>
+              <div className="stat-divider" />
+              <div className="stat-item">
+                <span className="stat-value">{stats.superLikes}</span>
+                <span className="stat-label">⭐ سوپر</span>
+              </div>
+              <div className="stat-divider" />
+              <div className="stat-item">
+                <span className="stat-value">{stats.matches}</span>
+                <span className="stat-label">💞 مچ</span>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <div className="profile-section">
+              <h3>درباره من</h3>
+              {isEditing ? (
+                <textarea
+                  className="pf-edit-textarea"
+                  value={editForm.bio}
+                  onChange={e => setEditForm({ ...editForm, bio: e.target.value })}
+                  placeholder="درباره خودت بنویس..."
+                  rows={3}
+                />
+              ) : (
+                <p>{profileData.bio || 'هنوز بیو‌ای ننوشتی. ویرایش کن و خودت رو معرفی کن!'}</p>
+              )}
+            </div>
+
+            {/* Looking For */}
+            {isEditing && (
+              <div className="profile-section">
+                <h3>دنبال</h3>
+                <div className="gender-options">
+                  {[{ v: 'men', l: '👨 مرد' }, { v: 'women', l: '👩 زن' }, { v: 'everyone', l: '💞 همه' }].map(o => (
+                    <button key={o.v} className={`gender-opt ${editForm.lookingFor === o.v ? 'active' : ''}`} onClick={() => setEditForm({ ...editForm, lookingFor: o.v })}>{o.l}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Interests */}
+            <div className="profile-section">
+              <h3>علاقه‌مندی‌ها {isEditing && <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 400 }}>(حداکثر ۵)</span>}</h3>
+              {isEditing ? (
+                <div className="tags-container">
+                  {INTERESTS_LIST.map(tag => (
+                    <div
+                      key={tag}
+                      className={`tag ${editForm.interests.includes(tag) ? 'selected' : ''}`}
+                      onClick={() => toggleInterest(tag)}
+                    >
+                      {tag}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="tags-container">
+                  {(profileData.interests || []).length > 0
+                    ? profileData.interests.map(tag => <div key={tag} className="tag selected">{tag}</div>)
+                    : <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>هنوز علاقه‌مندی انتخاب نکردی.</p>
+                  }
+                </div>
+              )}
+            </div>
+
+            {/* Boost Card */}
+            {!isEditing && (
+              <div className="pf-boost-card">
+                <div className="pf-boost-left">
+                  <Zap size={24} color="#8C30F5" fill="#8C30F5" />
+                  <div>
+                    <div className="pf-boost-title">بوست پروفایل</div>
+                    <div className="pf-boost-sub">۳۰ دقیقه در صدر نتایج باش</div>
+                  </div>
+                </div>
+                <button className="pf-boost-btn">فعال‌سازی</button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════ SETTINGS TAB ══════ */}
+        {activeTab === 'settings' && (
+          <div className="pf-settings">
+
+            <div className="pf-settings-group">
+              <div className="pf-settings-label">اکانت</div>
+              <div className="pf-settings-item">
+                <div className="pf-settings-icon" style={{ background: 'rgba(0,198,255,0.15)' }}>
+                  <ShieldCheck size={18} color="#00C6FF" />
+                </div>
+                <div className="pf-settings-text">
+                  <span>تأیید هویت</span>
+                  <span className="pf-settings-sub">پروفایلت رو تأیید کن</span>
+                </div>
+                <ChevronRight size={18} color="var(--text-secondary)" />
+              </div>
+              <div className="pf-settings-item">
+                <div className="pf-settings-icon" style={{ background: 'rgba(52,199,89,0.15)' }}>
+                  <MapPin size={18} color="#34C759" />
+                </div>
+                <div className="pf-settings-text">
+                  <span>موقعیت مکانی</span>
+                  <span className="pf-settings-sub">تنظیم موقعیت برای مچ بهتر</span>
+                </div>
+                <ChevronRight size={18} color="var(--text-secondary)" />
+              </div>
+            </div>
+
+            <div className="pf-settings-group">
+              <div className="pf-settings-label">اعلان‌ها</div>
+              <div className="pf-settings-item">
+                <div className="pf-settings-icon" style={{ background: 'rgba(255,179,0,0.15)' }}>
+                  <Bell size={18} color="#FFB300" />
+                </div>
+                <div className="pf-settings-text">
+                  <span>اعلان پیام</span>
+                  <span className="pf-settings-sub">دریافت اعلان از مچ‌های جدید</span>
+                </div>
+                <div className="pf-toggle on">
+                  <div className="pf-toggle-thumb" />
+                </div>
+              </div>
+              <div className="pf-settings-item">
+                <div className="pf-settings-icon" style={{ background: 'rgba(255,42,122,0.15)' }}>
+                  <Heart size={18} color="var(--primary-color)" />
+                </div>
+                <div className="pf-settings-text">
+                  <span>اعلان لایک</span>
+                  <span className="pf-settings-sub">وقتی کسی پسندیدت</span>
+                </div>
+                <div className="pf-toggle on">
+                  <div className="pf-toggle-thumb" />
+                </div>
+              </div>
+            </div>
+
+            <div className="pf-settings-group">
+              <div className="pf-settings-label">حریم خصوصی</div>
+              <div className="pf-settings-item">
+                <div className="pf-settings-icon" style={{ background: 'rgba(140,48,245,0.15)' }}>
+                  <Shield size={18} color="#8C30F5" />
+                </div>
+                <div className="pf-settings-text">
+                  <span>حالت ناپیدا</span>
+                  <span className="pf-settings-sub">پروفایلت رو از دیگران مخفی کن</span>
+                </div>
+                <div className="pf-toggle">
+                  <div className="pf-toggle-thumb" />
+                </div>
+              </div>
+            </div>
+
+            <div className="pf-settings-group">
+              <div className="pf-settings-label">سایر</div>
+              <div className="pf-settings-item">
+                <div className="pf-settings-icon" style={{ background: 'rgba(255,59,48,0.15)' }}>
+                  <LogOut size={18} color="var(--danger)" />
+                </div>
+                <div className="pf-settings-text">
+                  <span style={{ color: 'var(--danger)' }}>خروج از اکانت</span>
+                </div>
+                <ChevronRight size={18} color="var(--text-secondary)" />
+              </div>
+
+              <div className="pf-settings-item" onClick={() => setShowDeleteConfirm(true)}>
+                <div className="pf-settings-icon" style={{ background: 'rgba(255,59,48,0.15)' }}>
+                  <Trash2 size={18} color="var(--danger)" />
+                </div>
+                <div className="pf-settings-text">
+                  <span style={{ color: 'var(--danger)' }}>حذف اکانت</span>
+                  <span className="pf-settings-sub">این کار برگشت‌ناپذیر است</span>
+                </div>
+                <ChevronRight size={18} color="var(--text-secondary)" />
+              </div>
+            </div>
+
+            <div className="pf-app-version">Lovely v1.0 · ساخته شده با ❤️</div>
+          </div>
+        )}
       </div>
+
+      {/* ── Delete Confirm Modal ── */}
+      {showDeleteConfirm && (
+        <div className="pf-modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="pf-modal" onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+            <h3>حذف اکانت</h3>
+            <p>آیا مطمئنی؟ تمام مچ‌ها و پیام‌هایت حذف خواهند شد.</p>
+            <div className="pf-modal-btns">
+              <button className="pf-modal-cancel" onClick={() => setShowDeleteConfirm(false)}>لغو</button>
+              <button className="pf-modal-confirm">بله، حذف کن</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

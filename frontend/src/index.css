@@ -1153,113 +1153,509 @@ textarea.form-input {
   cursor: pointer;
 }
 
-/* Profile Page */
+/* ══════════════════════════════════
+   Profile Page
+══════════════════════════════════ */
 .profile-page {
   height: 100%;
   overflow-y: auto;
-  padding-bottom: 20px;
+  overflow-x: hidden;
+  padding-bottom: 32px;
+  position: relative;
 }
 
+/* ── Cover ── */
 .profile-header {
   position: relative;
-  height: 300px;
+  height: 280px;
+  flex-shrink: 0;
 }
 
 .profile-cover {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
 }
 
 .profile-cover-gradient {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   height: 200px;
-  background: linear-gradient(to top, var(--bg-color) 10%, rgba(9, 9, 14, 0.5) 60%, transparent 100%);
+  background: linear-gradient(to top, var(--bg-color) 15%, rgba(9,9,14,0.5) 60%, transparent 100%);
 }
 
+/* Header action buttons (edit/save/cancel) */
+.pf-header-actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.pf-hdr-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pf-edit-btn {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.pf-save-btn {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255,42,122,0.4);
+}
+
+.pf-cancel-btn {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ── Details section ── */
 .profile-details {
-  padding: 0 20px;
+  padding: 0 18px;
   position: relative;
-  top: -30px;
+  top: -28px;
 }
 
+/* Name row */
 .profile-name-age {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 16px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
 .profile-name-age h1 {
-  font-size: 32px;
+  font-size: 30px;
   margin: 0;
+  font-weight: 800;
 }
 
 .profile-name-age span {
-  font-size: 24px;
+  font-size: 22px;
   color: var(--text-secondary);
 }
 
+.pf-gender-badge {
+  font-size: 20px !important;
+  color: var(--text-primary) !important;
+}
+
+/* Edit name row */
+.pf-edit-name-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pf-edit-input {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: white;
+  padding: 12px 14px;
+  font-size: 15px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.pf-edit-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(255,42,122,0.15);
+}
+
+.pf-name-input { flex: 2; }
+.pf-age-input  { flex: 1; }
+
+/* Photo edit row */
+.pf-photo-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.pf-edit-textarea {
+  width: 100%;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: white;
+  padding: 12px 14px;
+  font-size: 14px;
+  outline: none;
+  resize: none;
+  line-height: 1.5;
+  transition: border-color 0.2s;
+}
+
+.pf-edit-textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(255,42,122,0.15);
+}
+
+/* ── Tabs ── */
+.pf-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  background: var(--surface-color);
+  border-radius: 14px;
+  padding: 4px;
+}
+
+.pf-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pf-tab.active {
+  background: var(--glass-bg);
+  color: var(--primary-color);
+  border: 1px solid var(--glass-border);
+}
+
+/* ── Stats ── */
 .profile-stats {
   display: flex;
   justify-content: space-around;
-  margin-bottom: 24px;
-  padding: 20px;
+  align-items: center;
+  margin-bottom: 22px;
+  padding: 18px 20px;
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 4px;
 }
 
 .stat-value {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--primary-color);
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
+  text-align: center;
 }
 
+.stat-divider {
+  width: 1px;
+  height: 36px;
+  background: var(--glass-border);
+}
+
+/* ── Profile Sections ── */
 .profile-section {
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .profile-section h3 {
-  font-size: 18px;
+  font-size: 17px;
+  font-weight: 700;
   margin-bottom: 12px;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .profile-section p {
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.6;
+  font-size: 14px;
 }
 
-.edit-profile-btn {
-  width: 100%;
-  padding: 16px;
+/* ── Boost card ── */
+.pf-boost-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(140,48,245,0.15), rgba(255,42,122,0.1));
+  border: 1px solid rgba(140,48,245,0.3);
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+
+.pf-boost-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pf-boost-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pf-boost-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.pf-boost-btn {
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #8C30F5, #FF2A7A);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Settings Tab ── */
+.pf-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pf-settings-group {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.pf-settings-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 12px 16px 6px;
+}
+
+.pf-settings-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-top: 1px solid var(--glass-border);
+  transition: background 0.15s;
+}
+
+.pf-settings-item:first-of-type { border-top: none; }
+.pf-settings-item:active { background: rgba(255,255,255,0.04); }
+
+.pf-settings-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pf-settings-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pf-settings-text span:first-child {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.pf-settings-sub {
+  font-size: 12px;
+  color: var(--text-secondary) !important;
+  font-weight: 400 !important;
+}
+
+/* Toggle switch */
+.pf-toggle {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
   background: var(--surface-color);
   border: 1px solid var(--glass-border);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.25s;
+}
+
+.pf-toggle.on {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.pf-toggle-thumb {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.pf-toggle.on .pf-toggle-thumb {
+  transform: translateX(18px);
+}
+
+.pf-app-version {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 12px;
+  opacity: 0.6;
+}
+
+/* ── Toast ── */
+.pf-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  animation: slideDown 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.pf-toast.success {
+  background: #34C759;
   color: white;
-  border-radius: 12px;
-  font-size: 16px;
+}
+
+.pf-toast.error {
+  background: var(--danger);
+  color: white;
+}
+
+@keyframes slideDown {
+  from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+/* ── Delete confirm modal ── */
+.pf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.2s ease;
+}
+
+.pf-modal {
+  background: var(--surface-color);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+}
+
+.pf-modal h3 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.pf-modal p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.pf-modal-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.pf-modal-cancel, .pf-modal-confirm {
+  flex: 1;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  margin-bottom: 16px;
 }
+
+.pf-modal-cancel {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+}
+
+.pf-modal-confirm {
+  background: var(--danger);
+  color: white;
+}
+
 
 /* Explore Page */
 .explore-page {
