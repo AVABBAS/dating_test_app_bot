@@ -196,11 +196,21 @@ app.get("*", (req, res) => {
 });
 
 // Start the server and bot
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  await bot.start({
-    onStart: (botInfo) => {
-      console.log(`Bot started as @${botInfo.username}`);
+  
+  const startBot = async () => {
+    try {
+      await bot.start({
+        onStart: (botInfo) => {
+          console.log(`Bot started as @${botInfo.username}`);
+        }
+      });
+    } catch (error) {
+      console.error("Bot start failed (likely due to zero-downtime deployment conflict). Retrying in 5s...");
+      setTimeout(startBot, 5000);
     }
-  });
+  };
+  
+  startBot();
 });
