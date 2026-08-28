@@ -73,16 +73,18 @@ const AppContent = () => {
 
         setUser(response.data);
 
-        // Check if onboarding is complete
-        if (!response.data.onboardingComplete && location.pathname !== '/onboarding') {
+        // Check if onboarding is complete (if age is set)
+        const isComplete = response.data.age != null;
+        if (!isComplete && location.pathname !== '/onboarding') {
           navigate('/onboarding', { replace: true });
         }
       } catch (err) {
         console.error('App init error:', err);
         // Fallback for UI testing
-        const dummyUser = { telegramId: 123, onboardingComplete: false };
+        const dummyUser = { telegramId: 123, age: null };
         setUser(dummyUser);
-        if (!dummyUser.onboardingComplete && location.pathname !== '/onboarding') {
+        const isCompleteFallback = dummyUser.age != null;
+        if (!isCompleteFallback && location.pathname !== '/onboarding') {
           navigate('/onboarding', { replace: true });
         }
       } finally {
