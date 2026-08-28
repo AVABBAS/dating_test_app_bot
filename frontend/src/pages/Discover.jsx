@@ -129,23 +129,33 @@ const Discover = ({ user }) => {
     );
   }
 
+  const dragDistance = Math.min(Math.sqrt(delta.x * delta.x + delta.y * delta.y), 150);
+  const dragPercentage = dragDistance / 150;
+  
   // Calculate card transforms and overlay opacities
+  const rotateX = isDragging ? -delta.y * 0.1 : 0;
+  const rotateY = isDragging ? delta.x * 0.1 : 0;
   const cardStyle = {
     transform: isDragging 
-      ? `translate(${delta.x}px, ${delta.y}px) rotate(${delta.x * 0.05}deg)`
-      : `translate(0px, 0px) rotate(0deg)`,
-    transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+      ? `translate(${delta.x}px, ${delta.y}px) rotate(${delta.x * 0.05}deg) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`
+      : `translate(0px, 0px) rotate(0deg) rotateX(0deg) rotateY(0deg)`,
+    transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    transformStyle: 'preserve-3d'
   };
 
   const likeOpacity = Math.min(Math.max(delta.x / 100, 0), 1);
   const nopeOpacity = Math.min(Math.max(-delta.x / 100, 0), 1);
   const superOpacity = Math.min(Math.max(-delta.y / 80, 0), 1) * (Math.abs(delta.x) < 50 ? 1 : 0);
 
+  const nextCardScale = 0.95 + (0.05 * dragPercentage);
+  const nextCardOpacity = 0.8 + (0.2 * dragPercentage);
+
   return (
     <div className="discover-page">
       <div 
         className="card-container"
         ref={containerRef}
+        style={{ perspective: '1000px' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -156,8 +166,9 @@ const Discover = ({ user }) => {
       >
         {/* Next Card (Background) */}
         {profiles[currentIndex + 1] && (
-          <div className="swipe-card" style={{ transform: 'scale(0.95)', zIndex: 1, opacity: 0.8 }}>
+          <div className="swipe-card" style={{ transform: `scale(${nextCardScale})`, zIndex: 1, opacity: nextCardOpacity, transition: isDragging ? 'none' : 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}>
             <img src={profiles[currentIndex + 1].photoUrl} className="card-image" alt="Profile" draggable={false} />
+            <div className="card-gradient-overlay"></div>
           </div>
         )}
 

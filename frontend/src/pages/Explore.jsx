@@ -37,7 +37,10 @@ const Explore = () => {
           <div key={profile.id} className="explore-card">
             <img src={profile.photoUrl} alt={profile.name} className="explore-img" />
             <div className="explore-info">
-              <span className="explore-name">{profile.name}, {profile.age}</span>
+              <span className="explore-name">
+                {profile.name}, {profile.age}
+                {profile.id % 2 === 0 && <span className="online-badge"></span>}
+              </span>
             </div>
           </div>
         ))}
