@@ -59,6 +59,29 @@ const Profile = ({ user }) => {
     setTimeout(() => setToast(null), 2500);
   };
 
+  const handleBoost = async () => {
+    if (!user?.telegramId) return;
+    try {
+      await axios.post(`${API_URL}/boost/${user.telegramId}`);
+      showToast('⚡ بوست فعال شد! ۳۰ دقیقه در صدر نتایج هستی');
+    } catch {
+      showToast('خطا در فعال‌سازی بوست', 'error');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?.telegramId) return;
+    try {
+      await axios.delete(`${API_URL}/user/${user.telegramId}`);
+      // Clear local state and reload
+      setShowDeleteConfirm(false);
+      showToast('اکانت حذف شد');
+      setTimeout(() => window.location.reload(), 1500);
+    } catch {
+      showToast('خطا در حذف اکانت', 'error');
+    }
+  };
+
   const saveProfile = async () => {
     setSaving(true);
     try {
@@ -272,7 +295,7 @@ const Profile = ({ user }) => {
                     <div className="pf-boost-sub">۳۰ دقیقه در صدر نتایج باش</div>
                   </div>
                 </div>
-                <button className="pf-boost-btn">فعال‌سازی</button>
+                <button className="pf-boost-btn" onClick={handleBoost}>فعال‌سازی</button>
               </div>
             )}
           </>
@@ -388,7 +411,7 @@ const Profile = ({ user }) => {
             <p>آیا مطمئنی؟ تمام مچ‌ها و پیام‌هایت حذف خواهند شد.</p>
             <div className="pf-modal-btns">
               <button className="pf-modal-cancel" onClick={() => setShowDeleteConfirm(false)}>لغو</button>
-              <button className="pf-modal-confirm">بله، حذف کن</button>
+              <button className="pf-modal-confirm" onClick={handleDeleteAccount}>بله، حذف کن</button>
             </div>
           </div>
         </div>

@@ -107,8 +107,8 @@ const Discover = ({ user }) => {
           setMatchData({
             userPhoto: user.photoUrl || '',
             matchPhoto: profile.photoUrl,
-            matchName: profile.name,
-            matchId: res.data.matchId,
+            matchName: profile.firstName || profile.name || 'کاربر',
+            matchId: res.data.matchedUser?.id || res.data.matchId,
           });
         }
       } catch (e) { console.error(e); }
@@ -122,6 +122,21 @@ const Discover = ({ user }) => {
     setCurrentIndex(last.index);
     setDelta({ x: 0, y: 0 });
     setExitDir(null);
+  };
+
+  const handleBoost = async () => {
+    if (!user?.telegramId) return;
+    try {
+      await axios.post(`${API_URL}/boost/${user.telegramId}`);
+      // Show quick toast feedback
+      const el = document.createElement('div');
+      el.textContent = '⚡ بوست فعال شد! ۳۰ دقیقه';
+      el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#8C30F5;color:white;padding:10px 20px;border-radius:30px;font-size:14px;font-weight:600;z-index:9999;animation:slideDown 0.3s ease';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2500);
+    } catch (e) {
+      console.error('Boost failed', e);
+    }
   };
 
   // Touch/Mouse handlers
@@ -229,7 +244,7 @@ const Discover = ({ user }) => {
           >
             <RotateCcw size={18} />
           </button>
-          <button className="hdr-btn hdr-boost" title="بوست">
+          <button className="hdr-btn hdr-boost" title="بوست" onClick={handleBoost}>
             <Zap size={18} fill="currentColor" />
           </button>
         </div>
@@ -301,7 +316,7 @@ const Discover = ({ user }) => {
               {/* Name row */}
               <div className="card-name-row">
                 <div className="card-name-age">
-                  <span className="card-name">{currentProfile.name}</span>
+                  <span className="card-name">{currentProfile.firstName || currentProfile.name || 'کاربر'}</span>
                   <span className="card-age">{currentProfile.age}</span>
                   {currentProfile.isVerified && (
                     <ShieldCheck size={18} color="#00C6FF" style={{ marginRight: 4 }} />
@@ -365,7 +380,7 @@ const Discover = ({ user }) => {
         <button className="action-btn btn-like" onClick={() => triggerExit('right', currentProfile)}>
           <HeartIcon size={30} strokeWidth={3} fill="currentColor" />
         </button>
-        <button className="action-btn btn-boost" title="بوست">
+        <button className="action-btn btn-boost" title="بوست" onClick={handleBoost}>
           <Zap size={20} fill="currentColor" />
         </button>
       </div>

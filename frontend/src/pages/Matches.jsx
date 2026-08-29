@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../telegram';
+import { Heart, MessageCircle } from 'lucide-react';
 
 const Matches = ({ user }) => {
   const [matches, setMatches] = useState([]);
@@ -10,68 +11,140 @@ const Matches = ({ user }) => {
 
   useEffect(() => {
     const fetchMatches = async () => {
-      if (!user) return;
+      if (!user?.telegramId) return;
       try {
-        // Fallback dummy data
-        const dummy = [
-          { matchId: 'm1', id: '1', name: 'Sarah', photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop', lastMessage: 'Hey! How are you?', time: '2m ago', isNew: true },
-          { matchId: 'm2', id: '2', name: 'Jessica', photoUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=200&auto=format&fit=crop', lastMessage: 'Loved your profile!', time: '1h ago', isNew: false },
-        ];
-        
-        try {
-          const res = await axios.get(`${API_URL}/matches/${user.telegramId}`);
-          setMatches(res.data.length > 0 ? res.data : dummy);
-        } catch {
-          setMatches(dummy);
-        }
+        const res = await axios.get(`${API_URL}/matches/${user.telegramId}`);
+        setMatches(res.data || []);
+      } catch {
+        setMatches([]);
       } finally {
         setLoading(false);
       }
     };
-    
     fetchMatches();
   }, [user]);
 
-  const newMatches = matches.filter(m => m.isNew);
-  const conversations = matches.filter(m => !m.isNew || m.lastMessage);
+  // New matches = matched but no messages yet
+  const newMatches = matches.filter(m => !m.lastMessage);
+  const conversations = matches.filter(m => !!m.lastMessage);
 
-  if (loading) return <div className="loading-screen">Loading matches...</div>;
+  const formatTime = (iso) => {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      const now = new Date();
+      const diff = (now - d) / 1000; // seconds
+      if (diff < 60)  return 'همین الان';
+      if (diff < 3600) return `${Math.floor(diff / 60)} دقیقه پیش`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} ساعت پیش`;
+      return `${Math.floor(diff / 86400)} روز پیش`;
+    } catch { return ''; }
+  };
+
+  if (loading) {
+    return (
+      <div className="matches-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Heart size={40} color="var(--primary-color)" style={{ animation: 'pulse 1s infinite alternate' }} />
+      </div>
+    );
+  }
+
+  if (matches.length === 0) {
+    return (
+      <div className="matches-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12 }}>
+        <div style={{ fontSize: 60 }}>💞</div>
+        <h3 style={{ color: 'var(--text-primary)' }}>هنوز مچی نداری</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 14, textAlign: 'center', padding: '0 40px' }}>
+          به بخش Discover برو و پروفایل‌ها را بررسی کن!
+        </p>
+        <button
+          style={{ marginTop: 12, padding: '12px 28px', borderRadius: 24, background: 'var(--gradient-primary)', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+          onClick={() => navigate('/')}
+        >
+          شروع سوایپ ❤️
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="matches-page">
-      <div className="new-matches-section">
-        <h3 className="section-title">New Matches</h3>
-        {newMatches.length > 0 ? (
-          <div className="horizontal-scroll">
-            {newMatches.map(match => (
-              <div key={match.matchId} className="match-avatar-wrapper" onClick={() => navigate(`/chat/${match.matchId}`)}>
-                <img src={match.photoUrl} alt={match.name} className="match-avatar" />
-                <span className="match-name">{match.name}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p style={{color: 'var(--text-secondary)', fontSize: '14px'}}>Keep swiping to get matches!</p>
-        )}
-      </div>
 
-      <div className="messages-section">
-        <h3 className="section-title">Messages</h3>
-        {conversations.length > 0 ? (
-          conversations.map(match => (
-            <div key={match.matchId} className="message-item" onClick={() => navigate(`/chat/${match.matchId}`)}>
-              <img src={match.photoUrl} alt={match.name} className="message-avatar" />
-              <div className="message-content">
-                <div className="message-header">
-                  <h4>{match.name}</h4>
-                  <span className="message-time">{match.time}</span>
+      {/* New Matches */}
+      {newMatches.length > 0 && (
+        <div className="new-matches-section">
+          <h3 className="section-title">مچ‌های جدید 🎉</h3>
+          <div className="horizontal-scroll">
+            {newMatches.map(match => {
+              const other = match.user;
+              return (
+                <div
+                  key={match.matchId}
+                  className="match-avatar-wrapper"
+                  onClick={() => navigate(`/chat/${match.matchId}`)}
+                >
+                  <div style={{ position: 'relative' }}>
+                    <img
+                      src={other.photoUrl}
+                      alt={other.firstName}
+                      className="match-avatar"
+                      onError={e => { e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'; }}
+                    />
+                    {other.isOnline && (
+                      <span style={{ position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#34C759', border: '2px solid var(--bg-color)' }} />
+                    )}
+                  </div>
+                  <span className="match-name">{other.firstName || 'کاربر'}</span>
                 </div>
-                <p className="message-preview">{match.lastMessage || 'Say hi! 👋'}</p>
-              </div>
-            </div>
-          ))
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Conversations */}
+      <div className="messages-section">
+        <h3 className="section-title">پیام‌ها 💬</h3>
+
+        {conversations.length === 0 ? (
+          <p style={{ color: 'var(--text-secondary)', fontSize: 14, padding: '8px 0' }}>
+            اولین پیام رو بفرست! 👋
+          </p>
         ) : (
-          <p style={{color: 'var(--text-secondary)', textAlign: 'center', marginTop: '40px'}}>No messages yet.</p>
+          conversations.map(match => {
+            const other = match.user;
+            const last = match.lastMessage;
+            return (
+              <div
+                key={match.matchId}
+                className="message-item"
+                onClick={() => navigate(`/chat/${match.matchId}`)}
+              >
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <img
+                    src={other.photoUrl}
+                    alt={other.firstName}
+                    className="message-avatar"
+                    onError={e => { e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'; }}
+                  />
+                  {other.isOnline && (
+                    <span style={{ position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#34C759', border: '2px solid var(--bg-color)' }} />
+                  )}
+                </div>
+                <div className="message-content">
+                  <div className="message-header">
+                    <h4>{other.firstName || 'کاربر'}</h4>
+                    <span className="message-time">{formatTime(last?.createdAt)}</span>
+                  </div>
+                  <p className="message-preview">
+                    {last?.isMine && <span style={{ color: 'var(--text-secondary)' }}>شما: </span>}
+                    {last?.text || 'سلام! 👋'}
+                  </p>
+                </div>
+                <MessageCircle size={18} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+              </div>
+            );
+          })
         )}
       </div>
     </div>

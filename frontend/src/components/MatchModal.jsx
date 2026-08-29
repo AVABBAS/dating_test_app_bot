@@ -6,7 +6,6 @@ const MatchModal = ({ data, onClose }) => {
   const [confetti, setConfetti] = useState([]);
 
   useEffect(() => {
-    // Generate random confetti dots
     const dots = Array.from({ length: 50 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
@@ -20,18 +19,19 @@ const MatchModal = ({ data, onClose }) => {
 
   const handleMessage = () => {
     onClose();
-    if(data.matchId) {
+    if (data.matchId) {
       navigate(`/chat/${data.matchId}`);
+    } else {
+      navigate('/matches');
     }
   };
 
   return (
     <div className="match-modal-overlay">
-      {/* Confetti Elements */}
       {confetti.map(c => (
-        <div 
-          key={c.id} 
-          className="confetti" 
+        <div
+          key={c.id}
+          className="confetti"
           style={{
             left: c.left,
             animationDelay: c.animationDelay,
@@ -43,19 +43,23 @@ const MatchModal = ({ data, onClose }) => {
         />
       ))}
 
-      <h1 className="match-title">It's a Match! 🎉</h1>
-      <p style={{color: 'white', marginBottom: '30px'}}>You and {data.matchName} have liked each other.</p>
-      
+      <h1 className="match-title">مچ شدید! 🎉</h1>
+      <p style={{ color: 'white', marginBottom: '30px', textAlign: 'center' }}>
+        شما و {data.matchName} یکدیگر را پسندیدید ❤️
+      </p>
+
       <div className="match-photos">
-        <img src={data.userPhoto} className="match-photo match-photo-left" alt="You" />
-        <img src={data.matchPhoto} className="match-photo match-photo-right" alt="Match" />
+        <img src={data.userPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop'} className="match-photo match-photo-left" alt="شما"
+          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop'; }} />
+        <img src={data.matchPhoto} className="match-photo match-photo-right" alt="مچ"
+          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=200&auto=format&fit=crop'; }} />
       </div>
 
       <button className="match-btn btn-primary" onClick={handleMessage}>
-        Send a Message
+        ارسال پیام 💬
       </button>
       <button className="match-btn btn-secondary" onClick={onClose}>
-        Keep Swiping
+        ادامه سوایپ ❤️
       </button>
     </div>
   );

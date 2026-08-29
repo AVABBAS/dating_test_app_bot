@@ -80,15 +80,16 @@ app.post("/api/user", async (req, res) => {
 // 2. Update Profile
 app.put("/api/user/:telegramId", async (req, res) => {
   const { telegramId } = req.params;
-  const { age, gender, lookingFor, bio, photoUrl, interests, photos } = req.body;
+  const { age, gender, lookingFor, bio, photoUrl, interests, photos, firstName } = req.body;
 
   try {
     const data = {};
+    if (firstName !== undefined && firstName !== null) data.firstName = firstName;
     if (age) data.age = parseInt(age);
     if (gender) data.gender = gender;
     if (lookingFor) data.lookingFor = lookingFor;
-    if (bio) data.bio = bio;
-    if (photoUrl) data.photoUrl = photoUrl;
+    if (bio !== undefined) data.bio = bio;
+    if (photoUrl !== undefined && photoUrl !== null && photoUrl !== '') data.photoUrl = photoUrl;
     if (interests) data.interests = interests;
     if (photos) data.photos = photos;
 
@@ -493,6 +494,61 @@ app.get("/api/likes-count/:telegramId", async (req, res) => {
     });
 
     res.json({ likes: likesCount, superLikes: superLikesCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// 11. Delete Account
+app.delete("/api/user/:telegramId", async (req, res) => {
+  const { telegramId } = req.params;
+  try {
+    const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Delete all related records first
+    await prisma.message.deleteMany({ where: { OR: [{ senderId: user.id }, { receiverId: user.id }] } });
+    const userMatches = await prisma.match.findMany({
+      where: { OR: [{ user1Id: user.id }, { user2Id: user.id }] },
+      select: { id: true }
+    });
+    if (userMatches.length > 0) {
+      await prisma.match.deleteMany({ where: { id: { in: userMatches.map(m => m.id) } } });
+    }
+    await prisma.like.deleteMany({ where: { OR: [{ fromUserId: user.id }, { toUserId: user.id }] } });
+    await prisma.user.delete({ where: { id: user.id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// 12. Get chat info (other user details in a match)
+app.get("/api/chat-info/:matchId", async (req, res) => {
+  const { matchId } = req.params;
+  const { telegramId } = req.query;
+  try {
+    const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const match = await prisma.match.findUnique({
+      where: { id: parseInt(matchId) },
+      include: { user1: true, user2: true }
+    });
+    if (!match) return res.status(404).json({ error: "Match not found" });
+
+    const other = match.user1Id === user.id ? match.user2 : match.user1;
+    res.json({
+      matchId: match.id,
+      otherUser: {
+        id: other.id,
+        firstName: other.firstName,
+        photoUrl: other.photoUrl,
+        isOnline: other.isOnline,
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server error" });
