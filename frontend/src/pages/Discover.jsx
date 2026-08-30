@@ -3,6 +3,7 @@ import axios from 'axios';
 import { API_URL } from '../telegram';
 import { X, Star, Heart as HeartIcon, RotateCcw, Zap, Info, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 import MatchModal from '../components/MatchModal';
+import Stories from '../components/Stories';
 
 const DUMMY_PROFILES = [
   {
@@ -50,6 +51,8 @@ const DUMMY_PROFILES = [
   },
 ];
 
+const DAILY_LIMIT = 30;
+
 const Discover = ({ user }) => {
   const [profiles, setProfiles] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -58,15 +61,27 @@ const Discover = ({ user }) => {
   const [matchData, setMatchData] = useState(null);
   const [history, setHistory] = useState([]);
   const [showInfo, setShowInfo] = useState(false);
+  const [whoLikedMe, setWhoLikedMe] = useState({ count: 0, users: [] });
+  const [swipesLeft, setSwipesLeft] = useState(() => {
+    const stored = localStorage.getItem('swipesLeft');
+    const storedDate = localStorage.getItem('swipesDate');
+    const today = new Date().toDateString();
+    if (storedDate !== today) {
+      localStorage.setItem('swipesDate', today);
+      localStorage.setItem('swipesLeft', DAILY_LIMIT);
+      return DAILY_LIMIT;
+    }
+    return stored ? parseInt(stored) : DAILY_LIMIT;
+  });
 
   // Swipe state
   const [delta, setDelta] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [exitDir, setExitDir] = useState(null); // 'left' | 'right' | 'up'
+  const [exitDir, setExitDir] = useState(null);
   const startPos = useRef({ x: 0, y: 0 });
   const containerRef = useRef(null);
 
-  useEffect(() => { fetchProfiles(); }, [user]);
+  useEffect(() => { fetchProfiles(); fetchWhoLikedMe(); }, [user]);
   useEffect(() => { setPhotoIndex(0); setShowInfo(false); }, [currentIndex]);
 
   const fetchProfiles = async () => {
@@ -84,6 +99,22 @@ const Discover = ({ user }) => {
     }
   };
 
+  const fetchWhoLikedMe = async () => {
+    if (!user?.telegramId) return;
+    try {
+      const res = await axios.get(`${API_URL}/who-liked-me/${user.telegramId}`);
+      setWhoLikedMe(res.data);
+    } catch { /* silent */ }
+  };
+
+  const decrementSwipes = () => {
+    setSwipesLeft(prev => {
+      const next = Math.max(prev - 1, 0);
+      localStorage.setItem('swipesLeft', next);
+      return next;
+    });
+  };
+
   const currentProfile = profiles[currentIndex];
 
   const triggerExit = (dir, profile) => {
@@ -91,6 +122,7 @@ const Discover = ({ user }) => {
     setExitDir(dir);
     setIsDragging(false);
     setHistory(prev => [...prev, { profile, index: currentIndex }]);
+    decrementSwipes();
 
     setTimeout(async () => {
       setCurrentIndex(prev => prev + 1);
@@ -249,6 +281,9 @@ const Discover = ({ user }) => {
           </button>
         </div>
       </div>
+
+      {/* ── Stories ── */}
+      <Stories user={user} />
 
       {/* ── Card Stack ── */}
       <div

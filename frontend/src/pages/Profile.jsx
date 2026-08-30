@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../telegram';
+import { api } from '../api';
 import {
   Edit3, Check, X, Camera, Heart, Star, Users,
-  ChevronRight, Bell, Shield, LogOut, Trash2,
-  MapPin, Zap, ShieldCheck, Settings, Info
+  ChevronLeft, Bell, Shield, LogOut, Trash2, MessageSquareQuote,
+  MapPin, Zap, ShieldCheck, Settings, Info, SlidersHorizontal, Crown, BadgeCheck
 } from 'lucide-react';
 
 const INTERESTS_LIST = [
@@ -14,8 +16,10 @@ const INTERESTS_LIST = [
 ];
 
 const Profile = ({ user }) => {
+  const navigate = useNavigate();
   const [profileData, setProfileData] = useState(null);
   const [stats, setStats] = useState({ likes: 0, superLikes: 0, matches: 0 });
+  const [prompts, setPrompts] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -36,6 +40,7 @@ const Profile = ({ user }) => {
         lookingFor: user.lookingFor || 'everyone',
       });
       fetchStats();
+      if (user.telegramId) api.getPrompts(user.telegramId).then((d) => setPrompts(d.prompts || [])).catch(() => {});
     }
   }, [user]);
 
@@ -183,6 +188,7 @@ const Profile = ({ user }) => {
           <div className="profile-name-age">
             <h1>{profileData.firstName || 'کاربر'}</h1>
             <span>{profileData.age}</span>
+            {profileData.isVerified && <BadgeCheck size={22} color="#00C6FF" style={{ marginRight: 2 }} />}
             {profileData.gender && <span className="pf-gender-badge">{profileData.gender === 'male' ? '👨' : profileData.gender === 'female' ? '👩' : '🌈'}</span>}
           </div>
         )}
@@ -285,6 +291,30 @@ const Profile = ({ user }) => {
               )}
             </div>
 
+            {/* Prompts */}
+            {!isEditing && (
+              <div className="profile-section">
+                <h3 style={{ justifyContent: 'space-between' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MessageSquareQuote size={17} /> پرامپت‌ها</span>
+                  <button className="pf-inline-link" onClick={() => navigate('/prompts')}>
+                    {prompts.length ? 'ویرایش' : 'افزودن'}
+                  </button>
+                </h3>
+                {prompts.length > 0 ? (
+                  <div className="pf-prompts">
+                    {prompts.map((p) => (
+                      <div key={p.id} className="pf-prompt-card">
+                        <span className="pf-prompt-q">{p.question}</span>
+                        <span className="pf-prompt-a">{p.answer}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>با پاسخ به چند سؤال کوتاه، پروفایلت را جذاب‌تر کن.</p>
+                )}
+              </div>
+            )}
+
             {/* Boost Card */}
             {!isEditing && (
               <div className="pf-boost-card">
@@ -306,85 +336,89 @@ const Profile = ({ user }) => {
           <div className="pf-settings">
 
             <div className="pf-settings-group">
-              <div className="pf-settings-label">اکانت</div>
-              <div className="pf-settings-item">
+              <div className="pf-settings-label">پروفایل</div>
+              <div className="pf-settings-item" onClick={() => navigate('/verification')}>
                 <div className="pf-settings-icon" style={{ background: 'rgba(0,198,255,0.15)' }}>
                   <ShieldCheck size={18} color="#00C6FF" />
                 </div>
                 <div className="pf-settings-text">
                   <span>تأیید هویت</span>
-                  <span className="pf-settings-sub">پروفایلت رو تأیید کن</span>
+                  <span className="pf-settings-sub">{profileData.isVerified ? 'تأیید شده ✓' : 'نشان آبی اعتماد بگیر'}</span>
                 </div>
-                <ChevronRight size={18} color="var(--text-secondary)" />
+                <ChevronLeft size={18} color="var(--text-secondary)" />
               </div>
-              <div className="pf-settings-item">
-                <div className="pf-settings-icon" style={{ background: 'rgba(52,199,89,0.15)' }}>
-                  <MapPin size={18} color="#34C759" />
+              <div className="pf-settings-item" onClick={() => navigate('/prompts')}>
+                <div className="pf-settings-icon" style={{ background: 'rgba(255,42,122,0.15)' }}>
+                  <MessageSquareQuote size={18} color="var(--primary-color)" />
                 </div>
                 <div className="pf-settings-text">
-                  <span>موقعیت مکانی</span>
-                  <span className="pf-settings-sub">تنظیم موقعیت برای مچ بهتر</span>
+                  <span>پرامپت‌های پروفایل</span>
+                  <span className="pf-settings-sub">سؤال‌های یخ‌شکن را پاسخ بده</span>
                 </div>
-                <ChevronRight size={18} color="var(--text-secondary)" />
+                <ChevronLeft size={18} color="var(--text-secondary)" />
+              </div>
+              <div className="pf-settings-item" onClick={() => navigate('/premium')}>
+                <div className="pf-settings-icon" style={{ background: 'rgba(255,179,0,0.15)' }}>
+                  <Crown size={18} color="#FFB300" />
+                </div>
+                <div className="pf-settings-text">
+                  <span>Lovely Premium</span>
+                  <span className="pf-settings-sub">{profileData.isPremium ? 'اشتراک فعال' : 'ارتقای حساب'}</span>
+                </div>
+                <ChevronLeft size={18} color="var(--text-secondary)" />
               </div>
             </div>
 
             <div className="pf-settings-group">
-              <div className="pf-settings-label">اعلان‌ها</div>
-              <div className="pf-settings-item">
+              <div className="pf-settings-label">کشف</div>
+              <div className="pf-settings-item" onClick={() => navigate('/filters')}>
+                <div className="pf-settings-icon" style={{ background: 'rgba(140,48,245,0.15)' }}>
+                  <SlidersHorizontal size={18} color="#8C30F5" />
+                </div>
+                <div className="pf-settings-text">
+                  <span>فیلترهای جستجو</span>
+                  <span className="pf-settings-sub">سن، فاصله و ترجیحات</span>
+                </div>
+                <ChevronLeft size={18} color="var(--text-secondary)" />
+              </div>
+              <div className="pf-settings-item" onClick={() => navigate('/passport')}>
+                <div className="pf-settings-icon" style={{ background: 'rgba(0,198,255,0.15)' }}>
+                  <MapPin size={18} color="#00C6FF" />
+                </div>
+                <div className="pf-settings-text">
+                  <span>پاسپورت</span>
+                  <span className="pf-settings-sub">در شهرهای دیگر جستجو کن</span>
+                </div>
+                <ChevronLeft size={18} color="var(--text-secondary)" />
+              </div>
+            </div>
+
+            <div className="pf-settings-group">
+              <div className="pf-settings-label">تنظیمات</div>
+              <div className="pf-settings-item" onClick={() => navigate('/settings')}>
                 <div className="pf-settings-icon" style={{ background: 'rgba(255,179,0,0.15)' }}>
                   <Bell size={18} color="#FFB300" />
                 </div>
                 <div className="pf-settings-text">
-                  <span>اعلان پیام</span>
-                  <span className="pf-settings-sub">دریافت اعلان از مچ‌های جدید</span>
+                  <span>اعلان‌ها و حریم خصوصی</span>
+                  <span className="pf-settings-sub">مدیریت اعلان‌ها و حالت ناپیدا</span>
                 </div>
-                <div className="pf-toggle on">
-                  <div className="pf-toggle-thumb" />
-                </div>
+                <ChevronLeft size={18} color="var(--text-secondary)" />
               </div>
-              <div className="pf-settings-item">
-                <div className="pf-settings-icon" style={{ background: 'rgba(255,42,122,0.15)' }}>
-                  <Heart size={18} color="var(--primary-color)" />
+              <div className="pf-settings-item" onClick={() => navigate('/safety')}>
+                <div className="pf-settings-icon" style={{ background: 'rgba(52,199,89,0.15)' }}>
+                  <Shield size={18} color="#34C759" />
                 </div>
                 <div className="pf-settings-text">
-                  <span>اعلان لایک</span>
-                  <span className="pf-settings-sub">وقتی کسی پسندیدت</span>
+                  <span>مرکز ایمنی</span>
+                  <span className="pf-settings-sub">نکات امنیتی و پشتیبانی</span>
                 </div>
-                <div className="pf-toggle on">
-                  <div className="pf-toggle-thumb" />
-                </div>
-              </div>
-            </div>
-
-            <div className="pf-settings-group">
-              <div className="pf-settings-label">حریم خصوصی</div>
-              <div className="pf-settings-item">
-                <div className="pf-settings-icon" style={{ background: 'rgba(140,48,245,0.15)' }}>
-                  <Shield size={18} color="#8C30F5" />
-                </div>
-                <div className="pf-settings-text">
-                  <span>حالت ناپیدا</span>
-                  <span className="pf-settings-sub">پروفایلت رو از دیگران مخفی کن</span>
-                </div>
-                <div className="pf-toggle">
-                  <div className="pf-toggle-thumb" />
-                </div>
+                <ChevronLeft size={18} color="var(--text-secondary)" />
               </div>
             </div>
 
             <div className="pf-settings-group">
               <div className="pf-settings-label">سایر</div>
-              <div className="pf-settings-item">
-                <div className="pf-settings-icon" style={{ background: 'rgba(255,59,48,0.15)' }}>
-                  <LogOut size={18} color="var(--danger)" />
-                </div>
-                <div className="pf-settings-text">
-                  <span style={{ color: 'var(--danger)' }}>خروج از اکانت</span>
-                </div>
-                <ChevronRight size={18} color="var(--text-secondary)" />
-              </div>
-
               <div className="pf-settings-item" onClick={() => setShowDeleteConfirm(true)}>
                 <div className="pf-settings-icon" style={{ background: 'rgba(255,59,48,0.15)' }}>
                   <Trash2 size={18} color="var(--danger)" />
@@ -393,11 +427,11 @@ const Profile = ({ user }) => {
                   <span style={{ color: 'var(--danger)' }}>حذف اکانت</span>
                   <span className="pf-settings-sub">این کار برگشت‌ناپذیر است</span>
                 </div>
-                <ChevronRight size={18} color="var(--text-secondary)" />
+                <ChevronLeft size={18} color="var(--text-secondary)" />
               </div>
             </div>
 
-            <div className="pf-app-version">Lovely v1.0 · ساخته شده با ❤️</div>
+            <div className="pf-app-version">Lovely v2.0 · ساخته شده با ❤️</div>
           </div>
         )}
       </div>

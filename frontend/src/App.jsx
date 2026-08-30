@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { getTelegramData, API_URL } from './telegram';
 import axios from 'axios';
-import { Flame, Compass, Heart, MessageCircle, User } from 'lucide-react';
+import { Flame, Compass, Heart, User, LayoutGrid } from 'lucide-react';
 
-// Pages
+// Core pages
 import Discover from './pages/Discover';
 import Explore from './pages/Explore';
 import Matches from './pages/Matches';
@@ -12,31 +12,51 @@ import Chat from './pages/Chat';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 
+// New sections
+import More from './pages/More';
+import Premium from './pages/Premium';
+import LikesYou from './pages/LikesYou';
+import Store from './pages/Store';
+import TopPicks from './pages/TopPicks';
+import Prompts from './pages/Prompts';
+import Verification from './pages/Verification';
+import Gifts from './pages/Gifts';
+import Settings from './pages/Settings';
+import SafetyCenter from './pages/SafetyCenter';
+import Filters from './pages/Filters';
+import Events from './pages/Events';
+import Leaderboard from './pages/Leaderboard';
+import Passport from './pages/Passport';
+import Notifications from './pages/Notifications';
+
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Hide bottom nav in chat and onboarding
-  if (location.pathname.startsWith('/chat') || location.pathname === '/onboarding') {
-    return null;
-  }
+  const path = location.pathname;
+
+  // Hide bottom nav on chat, onboarding and secondary/detail pages
+  const hideOn = ['/chat', '/onboarding', '/premium', '/likes-you', '/store', '/top-picks',
+    '/prompts', '/verification', '/gifts', '/settings', '/safety', '/filters',
+    '/events', '/leaderboard', '/passport', '/notifications'];
+  if (hideOn.some((p) => path.startsWith(p))) return null;
 
   const navItems = [
-    { path: '/', icon: Flame, label: 'Discover' },
-    { path: '/explore', icon: Compass, label: 'Explore' },
-    { path: '/matches', icon: Heart, label: 'Matches' },
-    { path: '/profile', icon: User, label: 'Profile' }
+    { path: '/', icon: Flame, label: 'کشف' },
+    { path: '/explore', icon: Compass, label: 'گردش' },
+    { path: '/matches', icon: Heart, label: 'پیام‌ها' },
+    { path: '/profile', icon: User, label: 'پروفایل' },
+    { path: '/more', icon: LayoutGrid, label: 'بیشتر' },
   ];
 
   return (
     <div className="bottom-nav">
-      {navItems.map(({ path, icon: Icon, label }) => {
-        const isActive = location.pathname === path;
+      {navItems.map(({ path: p, icon: Icon, label }) => {
+        const isActive = path === p;
         return (
-          <button 
-            key={path} 
+          <button
+            key={p}
             className={`nav-item ${isActive ? 'active' : ''}`}
-            onClick={() => navigate(path)}
+            onClick={() => navigate(p)}
           >
             <Icon size={24} className="nav-icon" />
             <span className="nav-label">{label}</span>
@@ -94,6 +114,9 @@ const AppContent = () => {
     initApp();
   }, [navigate, location.pathname]);
 
+  // Allow child pages to update the shared user object (e.g. after subscribing)
+  const patchUser = (patch) => setUser((u) => ({ ...u, ...patch }));
+
   if (loading) {
     return (
       <div className="loading-screen">
@@ -122,6 +145,23 @@ const AppContent = () => {
           <Route path="/chat/:matchId" element={<Chat user={user} />} />
           <Route path="/profile" element={<Profile user={user} />} />
           <Route path="/onboarding" element={<Onboarding user={user} onComplete={() => navigate('/')} />} />
+
+          {/* New sections */}
+          <Route path="/more" element={<More user={user} />} />
+          <Route path="/premium" element={<Premium user={user} onChange={patchUser} />} />
+          <Route path="/likes-you" element={<LikesYou user={user} />} />
+          <Route path="/store" element={<Store user={user} onChange={patchUser} />} />
+          <Route path="/top-picks" element={<TopPicks user={user} />} />
+          <Route path="/prompts" element={<Prompts user={user} />} />
+          <Route path="/verification" element={<Verification user={user} onChange={patchUser} />} />
+          <Route path="/gifts" element={<Gifts user={user} />} />
+          <Route path="/settings" element={<Settings user={user} />} />
+          <Route path="/safety" element={<SafetyCenter user={user} />} />
+          <Route path="/filters" element={<Filters user={user} />} />
+          <Route path="/events" element={<Events user={user} />} />
+          <Route path="/leaderboard" element={<Leaderboard user={user} />} />
+          <Route path="/passport" element={<Passport user={user} onChange={patchUser} />} />
+          <Route path="/notifications" element={<Notifications user={user} />} />
         </Routes>
       </div>
       <BottomNav />

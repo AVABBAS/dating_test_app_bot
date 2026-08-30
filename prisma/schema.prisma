@@ -20,8 +20,40 @@ model User {
   photoUrl    String?
   interests   String[] // array of interest tags
   photos      String[] // array of photo URLs
-  isBoosted   Boolean  @default(false)
-  boostExpiry DateTime?
+
+  // ── Boost / engagement balances ──────────────────────────
+  isBoosted      Boolean   @default(false)
+  boostExpiry    DateTime?
+  superLikesLeft Int       @default(3)
+  boostsLeft     Int       @default(1)
+  rosesLeft      Int       @default(5)
+
+  // ── Premium / subscription ───────────────────────────────
+  isPremium    Boolean   @default(false)
+  premiumTier  String?   // 'gold' | 'platinum'
+  premiumUntil DateTime?
+
+  // ── Verification ─────────────────────────────────────────
+  isVerified         Boolean @default(false)
+  verificationStatus String  @default("none") // none | pending | verified | rejected
+
+  // ── Privacy & notification preferences ───────────────────
+  incognito      Boolean @default(false)
+  notifyMatches  Boolean @default(true)
+  notifyLikes    Boolean @default(true)
+  notifyMessages Boolean @default(true)
+
+  // ── Location / passport ──────────────────────────────────
+  latitude     Float?
+  longitude    Float?
+  city         String?
+  passportCity String? // when set, overrides real location for discovery
+
+  // ── Discovery preferences ────────────────────────────────
+  prefAgeMin  Int @default(18)
+  prefAgeMax  Int @default(60)
+  maxDistance Int @default(100) // km
+
   isOnline    Boolean  @default(false)
   lastSeen    DateTime @default(now())
   createdAt   DateTime @default(now())
@@ -29,12 +61,27 @@ model User {
 
   likesGiven    Like[] @relation("LikesGiven")
   likesReceived Like[] @relation("LikesReceived")
-  
+
   matches1      Match[] @relation("MatchUser1")
   matches2      Match[] @relation("MatchUser2")
 
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+
+  prompts        ProfilePrompt[]
+  stories        Story[]
+  storyViews     StoryView[]     @relation("StoryViewer")
+  giftsSent      Gift[]          @relation("GiftFrom")
+  giftsReceived  Gift[]          @relation("GiftTo")
+  hostedEvents   Event[]         @relation("EventHost")
+  eventAttendees EventAttendee[]
+  purchases      Purchase[]
+  reportsMade    Report[]        @relation("ReportFrom")
+  reportsReceived Report[]       @relation("ReportTo")
+  notifications  Notification[]
+
+  @@index([gender])
+  @@index([lastSeen])
 }
 
 model Like {
@@ -48,6 +95,8 @@ model Like {
   toUser   User @relation("LikesReceived", fields: [toUserId], references: [id])
 
   @@unique([fromUserId, toUserId])
+  @@index([toUserId, action])
+  @@index([fromUserId])
 }
 
 model Match {
@@ -61,6 +110,8 @@ model Match {
   messages Message[]
 
   @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
 }
 
 model Message {
@@ -75,4 +126,141 @@ model Message {
   match    Match @relation(fields: [matchId], references: [id])
   sender   User  @relation("SentMessages", fields: [senderId], references: [id])
   receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([matchId])
+  @@index([receiverId, read])
+}
+
+// ── Hinge-style profile prompts ────────────────────────────
+model ProfilePrompt {
+  id       Int    @id @default(autoincrement())
+  userId   Int
+  question String
+  answer   String
+  order    Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ── Ephemeral stories ──────────────────────────────────────
+model Story {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  imageUrl  String
+  caption   String?
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storyViews StoryView[]
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model StoryView {
+  id        Int      @id @default(autoincrement())
+  storyId   Int
+  viewerId  Int
+  createdAt DateTime @default(now())
+
+  story  Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  viewer User  @relation("StoryViewer", fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, viewerId])
+}
+
+// ── Virtual gifts / roses ──────────────────────────────────
+model Gift {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int
+  toUserId   Int
+  type       String   // rose | heart | diamond | crown | teddy
+  message    String?
+  createdAt  DateTime @default(now())
+
+  fromUser User @relation("GiftFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("GiftTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([toUserId])
+}
+
+// ── Events / meetups ───────────────────────────────────────
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  coverUrl    String?
+  category    String?  // party | coffee | sport | culture | travel
+  city        String?
+  location    String?
+  startsAt    DateTime
+  hostId      Int?
+  createdAt   DateTime @default(now())
+
+  host      User?           @relation("EventHost", fields: [hostId], references: [id])
+  attendees EventAttendee[]
+
+  @@index([startsAt])
+}
+
+model EventAttendee {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+// ── Purchases (premium & consumable packs) ─────────────────
+model Purchase {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  item      String   // premium_gold | premium_platinum | boost_pack | superlike_pack | rose_pack
+  quantity  Int      @default(1)
+  amount    Float    @default(0)
+  currency  String   @default("USD")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ── User reports (moderation) ──────────────────────────────
+model Report {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int
+  toUserId   Int
+  reason     String
+  status     String   @default("open") // open | reviewed | actioned
+  createdAt  DateTime @default(now())
+
+  fromUser User @relation("ReportFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("ReportTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([toUserId])
+}
+
+// ── In-app notifications ───────────────────────────────────
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // match | like | superlike | message | gift | system | event
+  title     String
+  body      String?
+  data      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
 }
