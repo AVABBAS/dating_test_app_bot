@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { API_URL } from '../telegram';
-import { Camera, CheckCircle } from 'lucide-react';
 
 const Onboarding = ({ user, onComplete }) => {
   const [step, setStep] = useState(1);
 
   // Pre-fill with Telegram photo if available (fetched by server)
   const [formData, setFormData] = useState({
-    photoUrl: user?.photoUrl || '',
     name: user?.firstName || user?.first_name || '',
     age: user?.age || '',
     gender: user?.gender || 'female',
@@ -17,14 +15,7 @@ const Onboarding = ({ user, onComplete }) => {
     lookingFor: user?.lookingFor || 'everyone',
   });
 
-  // For photo editing: toggle between telegram photo and custom URL
-  const [useCustomPhoto, setUseCustomPhoto] = useState(false);
-  const [customPhotoUrl, setCustomPhotoUrl] = useState('');
-
-  const telegramPhoto = user?.photoUrl || '';
-  const effectivePhoto = useCustomPhoto ? customPhotoUrl : (formData.photoUrl || telegramPhoto);
-
-  const totalSteps = 4;
+  const totalSteps = 3;
 
   const interestsList = [
     '🎵 موسیقی', '🎬 فیلم', '✈️ سفر', '📚 کتاب', '🏋️ ورزش',
@@ -53,9 +44,7 @@ const Onboarding = ({ user, onComplete }) => {
 
   const submitData = async () => {
     try {
-      const finalPhoto = useCustomPhoto ? customPhotoUrl : formData.photoUrl;
       await axios.put(`${API_URL}/user/${user?.telegramId || '123'}`, {
-        photoUrl: finalPhoto,
         age: formData.age,
         gender: formData.gender,
         bio: formData.bio,
@@ -71,8 +60,7 @@ const Onboarding = ({ user, onComplete }) => {
   };
 
   const canGoNext = () => {
-    if (step === 1) return effectivePhoto.length > 0;
-    if (step === 2) return formData.name.trim().length > 0 && formData.age > 0;
+    if (step === 1) return formData.name.trim().length > 0 && formData.age > 0;
     return true;
   };
 
@@ -87,71 +75,8 @@ const Onboarding = ({ user, onComplete }) => {
         ))}
       </div>
 
-      {/* ── Step 1: Photo ── */}
+      {/* ── Step 1: Basic Info ── */}
       {step === 1 && (
-        <div className="step-container">
-          <h2 className="step-title">عکس پروفایل</h2>
-          <p className="step-subtitle">بهترین تصویر خودت رو انتخاب کن.</p>
-
-          {/* Photo Preview */}
-          <div className="ob-photo-wrapper">
-            {effectivePhoto ? (
-              <img src={effectivePhoto} alt="Preview" className="ob-photo-preview" />
-            ) : (
-              <div className="ob-photo-empty">
-                <Camera size={40} color="var(--text-secondary)" />
-                <span>عکسی انتخاب نشده</span>
-              </div>
-            )}
-
-            {/* Auto badge */}
-            {telegramPhoto && !useCustomPhoto && (
-              <div className="ob-auto-badge">
-                <CheckCircle size={14} />
-                عکس تلگرام
-              </div>
-            )}
-          </div>
-
-          {/* Use telegram photo */}
-          {telegramPhoto && (
-            <div className="ob-photo-options">
-              <button
-                className={`ob-photo-opt ${!useCustomPhoto ? 'active' : ''}`}
-                onClick={() => setUseCustomPhoto(false)}
-              >
-                📷 استفاده از عکس تلگرام
-              </button>
-              <button
-                className={`ob-photo-opt ${useCustomPhoto ? 'active' : ''}`}
-                onClick={() => setUseCustomPhoto(true)}
-              >
-                🔗 آدرس عکس دلخواه
-              </button>
-            </div>
-          )}
-
-          {/* Custom URL input */}
-          {(useCustomPhoto || !telegramPhoto) && (
-            <div className="input-group" style={{ marginTop: 12 }}>
-              <label>آدرس عکس (URL)</label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="https://..."
-                value={useCustomPhoto ? customPhotoUrl : formData.photoUrl}
-                onChange={e => {
-                  if (useCustomPhoto) setCustomPhotoUrl(e.target.value);
-                  else setFormData({ ...formData, photoUrl: e.target.value });
-                }}
-              />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Step 2: Basic Info ── */}
-      {step === 2 && (
         <div className="step-container">
           <h2 className="step-title">اطلاعات پایه</h2>
           <p className="step-subtitle">درباره خودت بگو.</p>
