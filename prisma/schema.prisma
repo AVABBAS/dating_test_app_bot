@@ -59,6 +59,15 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // ── UI / accessibility preferences (legacy columns kept for DB compat) ────
+  theme        String? @default("dark")
+  language     String? @default("fa")
+  fontSize     String? @default("medium")
+  highContrast Boolean @default(false)
+  reduceMotion Boolean @default(false)
+  calmMode     Boolean @default(false)
+  stars        Int     @default(0)
+
   likesGiven    Like[] @relation("LikesGiven")
   likesReceived Like[] @relation("LikesReceived")
 
