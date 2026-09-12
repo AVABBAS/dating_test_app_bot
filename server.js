@@ -75,8 +75,12 @@ app.post("/api/user", async (req, res) => {
       user = await prisma.user.create({
         data: { telegramId: telegramId.toString(), username, firstName, lastName, photoUrl: tgPhotoUrl },
       });
-    } else if (!user.photoUrl && tgPhotoUrl) {
-      user = await prisma.user.update({ where: { id: user.id }, data: { photoUrl: tgPhotoUrl } });
+    } else {
+      // Always update firstName/lastName from Telegram (they may have changed)
+      // Always refresh photo if Telegram has one (even if user already has one)
+      const updateData = { firstName, lastName };
+      if (tgPhotoUrl) updateData.photoUrl = tgPhotoUrl;
+      user = await prisma.user.update({ where: { id: user.id }, data: updateData });
     }
 
     await prisma.user.update({
@@ -235,7 +239,8 @@ app.post(
       }
 
       // No match yet: let the recipient know someone liked / super-liked them.
-      if (action === "like" || action === "superlike") {
+      // Only notify if this is a *new* action (not changing an existing one).
+      if ((action === "like" || action === "superlike") && !existing) {
         const toUser = await prisma.user.findUnique({ where: { id: toUserId } });
         if (toUser) {
           await notify(toUser, {

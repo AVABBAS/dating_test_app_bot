@@ -15,7 +15,7 @@ const INTERESTS_LIST = [
   '⚽ فوتبال', '🐱 حیوانات', '☕ قهوه', '🏔️ طبیعت', '💻 تکنولوژی', '🎭 تئاتر'
 ];
 
-const Profile = ({ user }) => {
+const Profile = ({ user, onChange, onLogout }) => {
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState(null);
   const [stats, setStats] = useState({ likes: 0, superLikes: 0, matches: 0 });
@@ -78,7 +78,6 @@ const Profile = ({ user }) => {
     if (!user?.telegramId) return;
     try {
       await axios.delete(`${API_URL}/user/${user.telegramId}`);
-      // Clear local state and reload
       setShowDeleteConfirm(false);
       showToast('اکانت حذف شد');
       setTimeout(() => window.location.reload(), 1500);
@@ -102,6 +101,8 @@ const Profile = ({ user }) => {
       setProfileData(res.data);
       setIsEditing(false);
       showToast('پروفایل ذخیره شد ✓');
+      // Sync the global user state so other pages (Discover header etc.) also update
+      if (onChange) onChange(res.data);
     } catch {
       showToast('خطا در ذخیره‌سازی', 'error');
     } finally {
@@ -419,6 +420,16 @@ const Profile = ({ user }) => {
 
             <div className="pf-settings-group">
               <div className="pf-settings-label">سایر</div>
+              <div className="pf-settings-item" onClick={() => onLogout ? onLogout() : window.Telegram?.WebApp?.close()}>
+                <div className="pf-settings-icon" style={{ background: 'rgba(255,179,0,0.12)' }}>
+                  <LogOut size={18} color="#FFB300" />
+                </div>
+                <div className="pf-settings-text">
+                  <span>بستن اپ</span>
+                  <span className="pf-settings-sub">بازگشت به تلگرام</span>
+                </div>
+                <ChevronLeft size={18} color="var(--text-secondary)" />
+              </div>
               <div className="pf-settings-item" onClick={() => setShowDeleteConfirm(true)}>
                 <div className="pf-settings-icon" style={{ background: 'rgba(255,59,48,0.15)' }}>
                   <Trash2 size={18} color="var(--danger)" />

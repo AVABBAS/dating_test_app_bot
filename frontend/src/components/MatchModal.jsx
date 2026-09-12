@@ -6,13 +6,14 @@ const MatchModal = ({ data, onClose }) => {
   const [confetti, setConfetti] = useState([]);
 
   useEffect(() => {
-    const dots = Array.from({ length: 50 }).map((_, i) => ({
+    const dots = Array.from({ length: 20 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
-      animationDelay: `${Math.random() * 2}s`,
+      animationDelay: `${Math.random() * 1.5}s`,
       backgroundColor: ['#FF2E93', '#FF8A00', '#00B0FF', '#00E676', '#FFFFFF'][Math.floor(Math.random() * 5)],
       width: `${Math.random() * 8 + 4}px`,
       height: `${Math.random() * 8 + 4}px`,
+      borderRadius: Math.random() > 0.5 ? '50%' : '3px',
     }));
     setConfetti(dots);
   }, []);

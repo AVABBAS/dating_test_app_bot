@@ -114,8 +114,15 @@ const AppContent = () => {
     initApp();
   }, [navigate, location.pathname]);
 
-  // Allow child pages to update the shared user object (e.g. after subscribing)
+  // Allow child pages to update the shared user object (e.g. after subscribing or editing profile)
   const patchUser = (patch) => setUser((u) => ({ ...u, ...patch }));
+
+  // Logout = close the Telegram WebApp (there is no session to clear in a Mini App)
+  const handleLogout = () => {
+    try { window.Telegram?.WebApp?.close(); } catch { /* fallback */ }
+    setUser(null);
+    navigate('/onboarding', { replace: true });
+  };
 
   if (loading) {
     return (
@@ -143,7 +150,7 @@ const AppContent = () => {
           <Route path="/explore" element={<Explore user={user} />} />
           <Route path="/matches" element={<Matches user={user} />} />
           <Route path="/chat/:matchId" element={<Chat user={user} />} />
-          <Route path="/profile" element={<Profile user={user} />} />
+          <Route path="/profile" element={<Profile user={user} onChange={patchUser} onLogout={handleLogout} />} />
           <Route path="/onboarding" element={<Onboarding user={user} onComplete={() => navigate('/')} />} />
 
           {/* New sections */}

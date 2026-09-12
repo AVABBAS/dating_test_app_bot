@@ -88,12 +88,10 @@ const Discover = ({ user }) => {
     if (!user) return;
     try {
       setLoading(true);
-      try {
-        const res = await axios.get(`${API_URL}/discover/${user.telegramId}`);
-        setProfiles(res.data.length > 0 ? res.data : DUMMY_PROFILES);
-      } catch {
-        setProfiles(DUMMY_PROFILES);
-      }
+      const res = await axios.get(`${API_URL}/discover/${user.telegramId}`);
+      setProfiles(res.data || []);
+    } catch {
+      setProfiles([]); // show empty state, not fake dummy profiles
     } finally {
       setLoading(false);
     }
