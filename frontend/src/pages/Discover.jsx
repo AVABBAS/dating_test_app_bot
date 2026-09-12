@@ -318,7 +318,7 @@ const Discover = ({ user }) => {
           style={{ transform: cardTransform, transition: cardTransition, zIndex: 2 }}
         >
           <div className="card-image-wrapper">
-            <img src={currentPhoto} className="card-image" alt={currentProfile.name} draggable={false} />
+            <img src={currentPhoto} className="card-image" alt={currentProfile.firstName || currentProfile.name || ''} draggable={false} />
 
             {/* Photo indicators */}
             {photos.length > 1 && (
