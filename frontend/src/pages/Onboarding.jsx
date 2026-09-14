@@ -126,8 +126,8 @@ const Onboarding = ({ user, onComplete }) => {
         </div>
       )}
 
-      {/* ── Step 3: Bio & Interests ── */}
-      {step === 3 && (
+      {/* ── Step 2: Bio & Interests ── */}
+      {step === 2 && (
         <div className="step-container">
           <h2 className="step-title">بیو و علاقه‌مندی‌ها</h2>
           <p className="step-subtitle">چی تو رو منحصربه‌فرد می‌کنه؟</p>
@@ -160,8 +160,8 @@ const Onboarding = ({ user, onComplete }) => {
         </div>
       )}
 
-      {/* ── Step 4: Preferences ── */}
-      {step === 4 && (
+      {/* ── Step 3: Preferences ── */}
+      {step === 3 && (
         <div className="step-container">
           <h2 className="step-title">ترجیحات</h2>
           <p className="step-subtitle">دنبال چه کسی می‌گردی؟</p>
@@ -187,7 +187,6 @@ const Onboarding = ({ user, onComplete }) => {
 
           {/* Summary preview */}
           <div className="ob-summary">
-            <img src={effectivePhoto} alt="" className="ob-summary-photo" />
             <div className="ob-summary-info">
               <strong>{formData.name || 'بدون اسم'}</strong>، {formData.age || '?'} ساله
               <div className="ob-summary-tags">

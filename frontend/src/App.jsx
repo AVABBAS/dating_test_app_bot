@@ -74,7 +74,12 @@ const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const initialized = React.useRef(false);
+
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     const initApp = async () => {
       try {
         const tgData = getTelegramData();
@@ -96,23 +101,22 @@ const AppContent = () => {
 
         // Check if onboarding is complete (age must be set)
         const isComplete = response.data.age != null;
-        if (!isComplete && location.pathname !== '/onboarding') {
+        if (!isComplete) {
           navigate('/onboarding', { replace: true });
         }
       } catch (err) {
         console.error('App init error:', err);
         const dummyUser = { telegramId: 123, age: null };
         setUser(dummyUser);
-        if (location.pathname !== '/onboarding') {
-          navigate('/onboarding', { replace: true });
-        }
+        navigate('/onboarding', { replace: true });
       } finally {
         setLoading(false);
       }
     };
 
     initApp();
-  }, [navigate, location.pathname]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Allow child pages to update the shared user object (e.g. after subscribing or editing profile)
   const patchUser = (patch) => setUser((u) => ({ ...u, ...patch }));
