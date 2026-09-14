@@ -4,7 +4,6 @@ const path = require("path");
 const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 const crypto = require("crypto");
-const rateLimit = require("express-rate-limit");
 
 const prisma = require("./lib/prisma");
 const bot = require("./bot");
@@ -55,17 +54,7 @@ function validateTelegramData(initData, botToken) {
   return computedHash === hash;
 }
 
-const path = require('path');
 
-// Map the "lookingFor" preference (men/women/everyone or male/female/both)
-// to the actual `gender` value stored on candidate profiles.
-function lookingForToGender(lookingFor) {
-  if (!lookingFor) return null;
-  const v = lookingFor.toLowerCase();
-  if (v === 'men' || v === 'male') return 'male';
-  if (v === 'women' || v === 'female') return 'female';
-  return null; // 'everyone' / 'both' => no gender filter
-}
 
 // Touch lastSeen so "online" (computed from lastSeen) stays fresh while active.
 async function touchLastSeen(userId) {
