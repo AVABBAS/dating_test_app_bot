@@ -1,0 +1,111 @@
+/* ═══════════════════════════════════════════════════════════
+   Bottom Navigation Component
+═══════════════════════════════════════════════════════════ */
+
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-md) 0;
+  padding-bottom: calc(var(--space-xl) + env(safe-area-inset-bottom));
+  background: var(--bg-surface);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-top: 1px solid var(--glass-border);
+  position: relative;
+  z-index: var(--z-overlay);
+  height: calc(64px + env(safe-area-inset-bottom));
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: all var(--transition-spring);
+  width: 20%;
+  padding: var(--space-sm) 0;
+  position: relative;
+}
+
+.nav-item.active {
+  color: var(--primary);
+}
+
+.nav-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.nav-icon {
+  transition: all var(--transition-spring);
+}
+
+.nav-item.active .nav-icon {
+  transform: translateY(-4px) scale(1.1);
+}
+
+.nav-label {
+  font-size: var(--font-caption);
+  font-weight: var(--weight-medium);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.nav-item.active .nav-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Active Indicator Dot */
+.nav-indicator {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--primary);
+  border-radius: var(--radius-full);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.nav-item.active .nav-indicator {
+  opacity: 1;
+}
+
+/* Nav Item Press State */
+.nav-item:active {
+  transform: scale(0.95);
+}
+
+/* Badge on Nav Icon */
+.nav-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--danger);
+  color: var(--text-1);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
