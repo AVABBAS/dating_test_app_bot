@@ -16,7 +16,9 @@ const Chat = ({ user }) => {
   const { matchId } = useParams();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+  // U4: Restore draft from localStorage on mount
+  const draftKey = `chat_draft_${matchId}`;
+  const [input, setInput] = useState(() => localStorage.getItem(draftKey) || '');
   const [matchInfo, setMatchInfo] = useState(null);
   const [sending, setSending] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
@@ -91,8 +93,11 @@ const Chat = ({ user }) => {
   }, [matchId, user]);
 
   const handleInputChange = (e) => {
-    setInput(e.target.value);
+    const val = e.target.value;
+    setInput(val);
     sendTyping();
+    // U4: Persist draft so it survives navigation
+    localStorage.setItem(draftKey, val);
   };
 
   // ── Send message ───────────────────────────────────────
@@ -100,6 +105,7 @@ const Chat = ({ user }) => {
     const msg = typeof text === 'string' ? text : input;
     if (!msg.trim() || sending) return;
     setInput('');
+    localStorage.removeItem(draftKey); // U4: clear draft on send
     setSending(true);
 
     const tempId = `temp-${Date.now()}`;
@@ -116,6 +122,7 @@ const Chat = ({ user }) => {
     } catch {
       setMessages(prev => prev.filter(m => m.id !== tempId));
       setInput(msg);
+      localStorage.setItem(draftKey, msg); // restore draft on failure
     } finally {
       setSending(false);
     }

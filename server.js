@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 
 const prisma = require("./lib/prisma");
@@ -22,7 +23,26 @@ app.use(express.json());
 // Attach the verified Telegram identity (from initData) to req.tg when present.
 app.use(attachTelegramUser);
 
-// Static assets for the built frontend (does NOT intercept /api/*).
+// ── Rate limiters ──────────────────────────────────────────────
+// General API: 200 req/min per IP (generous for a Mini App)
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "درخواست‌های زیادی ارسال شده. لطفاً کمی صبر کنید." },
+});
+// Strict limiter for write actions (like/superlike/message/boost)
+const actionLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "سرعت ارسال خیلی زیاد است. لطفاً کمی صبر کنید." },
+});
+app.use("/api", generalLimiter);
+
+// Static assets for the built frontend (does NOT intercept /api/*)
 app.use(express.static(path.join(__dirname, "frontend/dist")));
 
 // Lazily clear boosts whose 30-minute window has elapsed. Self-healing, so we
@@ -164,6 +184,7 @@ app.get("/api/discover/:telegramId", async (req, res) => {
 // 4. Like / Pass / Super Like a Profile
 app.post(
   "/api/action",
+  actionLimiter,
   authorizeTelegramId((req) => req.body.fromTelegramId),
   async (req, res) => {
     const { fromTelegramId, action } = req.body; // 'like' | 'pass' | 'superlike'
@@ -275,8 +296,8 @@ app.get("/api/matches/:telegramId", async (req, res) => {
     const matches = await prisma.match.findMany({
       where: { OR: [{ user1Id: user.id }, { user2Id: user.id }] },
       include: {
-        user1: true,
-        user2: true,
+        user1: { select: { id: true, firstName: true, photoUrl: true, isOnline: true, lastSeen: true, isPremium: true, isVerified: true } },
+        user2: { select: { id: true, firstName: true, photoUrl: true, isOnline: true, lastSeen: true, isPremium: true, isVerified: true } },
         messages: { orderBy: { createdAt: "desc" }, take: 1 },
       },
       orderBy: { createdAt: "desc" },
@@ -304,9 +325,15 @@ app.get("/api/matches/:telegramId", async (req, res) => {
 // 6. Send Message
 app.post(
   "/api/messages",
+  actionLimiter,
   authorizeTelegramId((req) => req.body.fromTelegramId),
   async (req, res) => {
     const { matchId, fromTelegramId, text } = req.body;
+
+    // S4: Validate message content
+    const trimmed = (text || "").trim();
+    if (!trimmed) return res.status(400).json({ error: "پیام نمی‌تواند خالی باشد" });
+    if (trimmed.length > 2000) return res.status(400).json({ error: "پیام حداکثر ۲۰۰۰ کاراکتر می‌تواند باشد" });
 
     try {
       const sender = await prisma.user.findUnique({ where: { telegramId: fromTelegramId.toString() } });
@@ -326,16 +353,16 @@ app.post(
       const receiver = match.user1Id === sender.id ? match.user2 : match.user1;
 
       const message = await prisma.message.create({
-        data: { matchId: match.id, senderId: sender.id, receiverId: receiver.id, text },
+        data: { matchId: match.id, senderId: sender.id, receiverId: receiver.id, text: trimmed },
       });
       touchLastSeen(sender.id);
 
       await notify(receiver, {
         type: "message",
         title: `پیام جدید از ${sender.firstName || "یک نفر"}`,
-        body: text.length > 80 ? text.slice(0, 80) + "…" : text,
+        body: trimmed.length > 80 ? trimmed.slice(0, 80) + "…" : trimmed,
         data: { matchId: match.id, senderId: sender.id },
-        telegramText: `💬 ${sender.firstName || sender.username}: ${text}`,
+        telegramText: `💬 ${sender.firstName || sender.username}: ${trimmed}`,
       });
 
       res.json(message);
@@ -355,6 +382,13 @@ app.get("/api/messages/:matchId", async (req, res) => {
     const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
     if (!user) return res.status(404).json({ error: "User not found" });
     touchLastSeen(user.id);
+
+    // S3: Verify the requesting user actually belongs to this match (IDOR protection)
+    const match = await prisma.match.findUnique({ where: { id: parseInt(matchId) } });
+    if (!match) return res.status(404).json({ error: "Match not found" });
+    if (match.user1Id !== user.id && match.user2Id !== user.id) {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     const messages = await prisma.message.findMany({
       where: { matchId: parseInt(matchId) },
