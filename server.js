@@ -3,15 +3,49 @@ const cors = require("cors");
 const { PrismaClient } = require("@prisma/client");
 const bot = require("./bot");
 require("dotenv").config();
+const crypto = require("crypto");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
 
+// Middleware
 app.use(cors());
-app.use(express.json());
-const path = require('path');
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
+
+// --- SECURITY: Rate Limiting ---
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
+// --- SECURITY: Telegram Data Validation ---
+function validateTelegramData(initData, botToken) {
+  if (!initData || !botToken) return false;
+
+  const urlParams = new URLSearchParams(initData);
+  const hash = urlParams.get('hash');
+  urlParams.delete('hash');
+
+  const dataCheckString = Array.from(urlParams.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n');
+
+  const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+  const computedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+  return computedHash === hash;
+}
+
+const path = require('path');
 
 // Map the "lookingFor" preference (men/women/everyone or male/female/both)
 // to the actual `gender` value stored on candidate profiles.
@@ -27,7 +61,13 @@ function lookingForToGender(lookingFor) {
 
 // 1. Get Profile or Create New User
 app.post("/api/user", async (req, res) => {
-  const { telegramId, username, firstName, lastName } = req.body;
+  const { telegramId, username, firstName, lastName, initData } = req.body;
+  
+  // CRITICAL SECURITY CHECK: Validate Telegram data
+  if (!validateTelegramData(initData, BOT_TOKEN)) {
+    return res.status(403).json({ error: "Invalid Telegram data. Authentication failed." });
+  }
+  
   if (!telegramId) return res.status(400).json({ error: "Telegram ID required" });
 
   try {
