@@ -3,6 +3,8 @@ const cors = require("cors");
 const path = require("path");
 const rateLimit = require("express-rate-limit");
 require("dotenv").config();
+const crypto = require("crypto");
+const rateLimit = require("express-rate-limit");
 
 const prisma = require("./lib/prisma");
 const bot = require("./bot");
@@ -17,45 +19,52 @@ const { notify } = require("./lib/notify");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
 
+// Middleware
 app.use(cors());
-app.use(express.json());
-// Attach the verified Telegram identity (from initData) to req.tg when present.
-app.use(attachTelegramUser);
+app.use(express.json({ limit: '10mb' }));
+app.use(express.static(path.join(__dirname, 'frontend/dist')));
 
-// ── Rate limiters ──────────────────────────────────────────────
-// General API: 200 req/min per IP (generous for a Mini App)
-const generalLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 200,
+// --- SECURITY: Rate Limiting ---
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: "درخواست‌های زیادی ارسال شده. لطفاً کمی صبر کنید." },
 });
-// Strict limiter for write actions (like/superlike/message/boost)
-const actionLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "سرعت ارسال خیلی زیاد است. لطفاً کمی صبر کنید." },
-});
-app.use("/api", generalLimiter);
+app.use('/api/', limiter);
 
-// Static assets for the built frontend (does NOT intercept /api/*)
-app.use(express.static(path.join(__dirname, "frontend/dist")));
+// --- SECURITY: Telegram Data Validation ---
+function validateTelegramData(initData, botToken) {
+  if (!initData || !botToken) return false;
 
-// Lazily clear boosts whose 30-minute window has elapsed. Self-healing, so we
-// don't depend on an in-memory setTimeout that dies on restart/redeploy.
-async function sweepExpiredBoosts() {
-  try {
-    await prisma.user.updateMany({
-      where: { isBoosted: true, boostExpiry: { lt: new Date() } },
-      data: { isBoosted: false, boostExpiry: null },
-    });
-  } catch (e) {
-    console.error("sweepExpiredBoosts:", e);
-  }
+  const urlParams = new URLSearchParams(initData);
+  const hash = urlParams.get('hash');
+  urlParams.delete('hash');
+
+  const dataCheckString = Array.from(urlParams.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n');
+
+  const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+  const computedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+  return computedHash === hash;
+}
+
+const path = require('path');
+
+// Map the "lookingFor" preference (men/women/everyone or male/female/both)
+// to the actual `gender` value stored on candidate profiles.
+function lookingForToGender(lookingFor) {
+  if (!lookingFor) return null;
+  const v = lookingFor.toLowerCase();
+  if (v === 'men' || v === 'male') return 'male';
+  if (v === 'women' || v === 'female') return 'female';
+  return null; // 'everyone' / 'both' => no gender filter
 }
 
 // Touch lastSeen so "online" (computed from lastSeen) stays fresh while active.
@@ -71,7 +80,13 @@ async function touchLastSeen(userId) {
 
 // 1. Get Profile or Create New User
 app.post("/api/user", async (req, res) => {
-  const { telegramId, username, firstName, lastName } = req.body;
+  const { telegramId, username, firstName, lastName, initData } = req.body;
+  
+  // CRITICAL SECURITY CHECK: Validate Telegram data
+  if (!validateTelegramData(initData, BOT_TOKEN)) {
+    return res.status(403).json({ error: "Invalid Telegram data. Authentication failed." });
+  }
+  
   if (!telegramId) return res.status(400).json({ error: "Telegram ID required" });
 
   try {

@@ -95,7 +95,7 @@ const AppContent = () => {
           firstName: tgData.user.first_name,
           lastName: tgData.user.last_name || '',
           username: tgData.user.username || '',
-          initData: tgData.initData, // Send raw initData for server-side HMAC validation
+          initData: tgData.initData, // Send raw initData for server-side validation
         });
 
         setUser(response.data);
