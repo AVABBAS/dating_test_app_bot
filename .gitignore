@@ -1,50 +1,46 @@
 ```
 # Dependencies
 node_modules/
+frontend/node_modules/
 
-# Build directories
-dist/
-build/
+# Build artifacts
+frontend/dist/
+
+# Package lock files
+package-lock.json
+frontend/package-lock.json
 
 # Environment files
 .env
 .env.local
-.env.*
-
-# Editor/IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
+*.env.*
 
 # Logs
 *.log
 
-# Python specific
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache (if any Python files detected in project)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
 
 # Coverage reports
 coverage/
 htmlcov/
 .coverage
 
-# Testing
-.pytest_cache/
-.mypy_cache/
-
-# OS generated files
-.DS_Store
-Thumbs.db
+# Temporary files
+*.tmp
+*.swp
+*.swo
 
 # Compressed files
 *.zip
