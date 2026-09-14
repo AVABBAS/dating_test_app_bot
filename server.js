@@ -35,6 +35,12 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+const actionLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { error: 'Too many actions, slow down' }
+});
+
 // --- SECURITY: Telegram Data Validation ---
 function validateTelegramData(initData, botToken) {
   if (!initData || !botToken) return false;
