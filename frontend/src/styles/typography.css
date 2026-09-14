@@ -1,0 +1,104 @@
+/* ═══════════════════════════════════════════════════════════
+   Typography System
+   Based on Vazirmatn font family
+═══════════════════════════════════════════════════════════ */
+
+/* Display XL — Splash screen only */
+.text-display-xl {
+  font-size: var(--font-display-xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+/* Display LG — Page titles */
+.text-display-lg {
+  font-size: var(--font-display-lg);
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+}
+
+/* Title MD — Card names, section headers */
+.text-title-md {
+  font-size: var(--font-title-md);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+/* Title SM — Section headers */
+.text-title-sm {
+  font-size: var(--font-title-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+}
+
+/* Body LG — Main content text */
+.text-body-lg {
+  font-size: var(--font-body-lg);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-loose);
+}
+
+/* Body SM — Descriptions, secondary text */
+.text-body-sm {
+  font-size: var(--font-body-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-relaxed);
+}
+
+/* Caption — Timestamps, badges, small labels */
+.text-caption {
+  font-size: var(--font-caption);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+}
+
+/* Text Colors */
+.text-primary {
+  color: var(--text-1);
+}
+
+.text-secondary {
+  color: var(--text-2);
+}
+
+.text-tertiary {
+  color: var(--text-3);
+}
+
+.text-quaternary {
+  color: var(--text-4);
+}
+
+/* Text Alignment */
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-left {
+  text-align: left;
+}
+
+/* Truncate */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

@@ -1,0 +1,110 @@
+/* ═══════════════════════════════════════════════════════════
+   Toast / Snackbar Component
+═══════════════════════════════════════════════════════════ */
+
+.toast-container {
+  position: fixed;
+  bottom: calc(var(--space-3xl) + var(--space-lg));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  animation: toastSlideUp var(--transition-normal) ease forwards;
+  max-width: 280px;
+  pointer-events: auto;
+}
+
+.toast-hiding {
+  animation: toastSlideDown var(--transition-normal) ease forwards;
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastSlideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-message {
+  flex: 1;
+  color: var(--text-1);
+  font-size: var(--font-body-sm);
+  line-height: var(--leading-relaxed);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+/* Toast Types */
+.toast-success {
+  border-color: rgba(48, 209, 88, 0.3);
+}
+
+.toast-success .toast-icon {
+  color: var(--success);
+}
+
+.toast-error {
+  border-color: rgba(255, 69, 58, 0.3);
+}
+
+.toast-error .toast-icon {
+  color: var(--danger);
+}
+
+.toast-info {
+  border-color: var(--glass-border);
+}
+
+.toast-info .toast-icon {
+  color: var(--text-2);
+}
+
+.toast-warning {
+  border-color: rgba(255, 214, 10, 0.3);
+}
+
+.toast-warning .toast-icon {
+  color: var(--warning);
+}
