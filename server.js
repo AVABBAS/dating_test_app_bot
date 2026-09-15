@@ -4,7 +4,6 @@ const path = require("path");
 const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 const crypto = require("crypto");
-const rateLimit = require("express-rate-limit");
 
 const prisma = require("./lib/prisma");
 const bot = require("./bot");
@@ -53,27 +52,6 @@ function validateTelegramData(initData, botToken) {
   const computedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
   return computedHash === hash;
-}
-
-const path = require('path');
-
-// Map the "lookingFor" preference (men/women/everyone or male/female/both)
-// to the actual `gender` value stored on candidate profiles.
-function lookingForToGender(lookingFor) {
-  if (!lookingFor) return null;
-  const v = lookingFor.toLowerCase();
-  if (v === 'men' || v === 'male') return 'male';
-  if (v === 'women' || v === 'female') return 'female';
-  return null; // 'everyone' / 'both' => no gender filter
-}
-
-// Touch lastSeen so "online" (computed from lastSeen) stays fresh while active.
-async function touchLastSeen(userId) {
-  try {
-    await prisma.user.update({ where: { id: userId }, data: { lastSeen: new Date(), isOnline: true } });
-  } catch {
-    /* non-fatal */
-  }
 }
 
 // ==================== Core API Endpoints ====================
@@ -164,7 +142,6 @@ app.get("/api/discover/:telegramId", async (req, res) => {
   const { telegramId } = req.params;
 
   try {
-    await sweepExpiredBoosts();
     const currentUser = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
     if (!currentUser) return res.status(404).json({ error: "User not found" });
 
