@@ -1,6 +1,6 @@
 const assert = require("assert");
 const crypto = require("crypto");
-const { validateInitData } = require("../lib/telegramAuth");
+const { validateInitData, authorizeTelegramId } = require("../lib/telegramAuth");
 
 const BOT_TOKEN = "123456789:TEST_TOKEN";
 
@@ -24,5 +24,28 @@ assert.equal(validateInitData(makeInitData({ authDate: Math.floor(Date.now() / 1
 assert.equal(validateInitData(makeInitData({ authDate: Math.floor(Date.now() / 1000) + 61 })).ok, false, "future initData must be rejected");
 assert.equal(validateInitData(makeInitData({ userId: 0 })).ok, false, "invalid Telegram user id must be rejected");
 assert.equal(validateInitData(makeInitData().replace(/hash=[^&]+/, "hash=not-a-sha256-hash")).ok, false, "malformed hash must be rejected");
+
+function runAuthorize(req) {
+  let statusCode = null;
+  let payload = null;
+  let nextCalled = false;
+  const res = {
+    status(code) {
+      statusCode = code;
+      return this;
+    },
+    json(body) {
+      payload = body;
+      return this;
+    },
+  };
+  authorizeTelegramId((r) => r.params.telegramId)(req, res, () => { nextCalled = true; });
+  return { statusCode, payload, nextCalled };
+}
+
+assert.equal(runAuthorize({ params: { telegramId: "123" }, tg: undefined }).statusCode, 401, "missing Telegram auth must fail closed");
+assert.equal(runAuthorize({ params: { telegramId: "123" }, tg: { id: "999", verified: true } }).statusCode, 403, "mismatched Telegram identity must be rejected");
+assert.equal(runAuthorize({ params: { telegramId: "123" }, tg: { id: "123", verified: true } }).nextCalled, true, "matching verified Telegram identity must be accepted");
+assert.equal(runAuthorize({ params: { telegramId: "123" }, tg: { id: "123", verified: false } }).statusCode, 401, "unverified Telegram identity must be rejected");
 
 console.log("security regression tests passed");
