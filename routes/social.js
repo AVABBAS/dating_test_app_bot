@@ -85,7 +85,13 @@ router.get("/events/:id", async (req, res) => {
     let joined = false;
     if (req.query.telegramId) {
       const me = await prisma.user.findUnique({ where: { telegramId: req.query.telegramId.toString() }, select: { id: true } });
-      if (me) joined = event.attendees.some((a) => a.userId === me.id);
+      if (me) {
+        const membership = await prisma.eventAttendee.findUnique({
+          where: { eventId_userId: { eventId: id, userId: me.id } },
+          select: { id: true },
+        });
+        joined = Boolean(membership);
+      }
     }
 
     res.json({
