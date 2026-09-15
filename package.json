@@ -9,9 +9,6 @@
     "db:seed": "prisma db seed",
     "test": "node test/security-regression.test.js && node test/remediation.test.js"
   },
-  "prisma": {
-    "seed": "node prisma/seed.js"
-  },
   "dependencies": {
     "@prisma/client": "^6.3.1",
     "axios": "^1.7.9",
