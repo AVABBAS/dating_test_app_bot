@@ -42,6 +42,7 @@ router.get("/events", async (req, res) => {
         _count: { select: { attendees: true } },
       },
       orderBy: { startsAt: "asc" },
+      take: 50,
     });
 
     res.json({
