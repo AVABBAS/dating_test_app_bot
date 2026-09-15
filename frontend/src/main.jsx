@@ -12,6 +12,7 @@ import './styles/components/card.css'
 import './styles/components/input.css'
 import './styles/components/modal.css'
 import './styles/components/toast.css'
+import './sections.css'
 import './styles/legacy-shim.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(

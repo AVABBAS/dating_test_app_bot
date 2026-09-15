@@ -11,6 +11,7 @@ const {
   isPremiumActive,
   publicUserSelect,
 } = require("../lib/helpers");
+const { mutateBalance } = require("../lib/ledger");
 
 const router = express.Router();
 
@@ -74,7 +75,6 @@ router.get("/premium/status/:telegramId", async (req, res) => {
 });
 
 // POST /api/premium/subscribe  { telegramId, tier }
-// CRITICAL: Uses transaction for atomicity - either all succeeds or all fails
 router.post(
   "/premium/subscribe",
   authorizeTelegramId((req) => req.body.telegramId),
@@ -84,25 +84,38 @@ router.post(
     if (!plan) return res.status(400).json({ error: "Invalid tier" });
 
     try {
-      // CRITICAL: Price is ALWAYS determined server-side from the plan catalog
-      // NEVER trust client-sent prices
       const until = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // +30 days
-      const bonus = tier === "platinum" ? { superLikesLeft: { increment: 5 }, rosesLeft: { increment: 5 } } : { superLikesLeft: { increment: 5 } };
+      const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
+      if (!user) return res.status(404).json({ error: "User not found" });
 
-      // CRITICAL: Atomic transaction - prevents partial updates
-      const result = await prisma.$transaction(async (tx) => {
-        // Update user with premium status
-        const user = await tx.user.update({
-          where: { telegramId: telegramId.toString() },
-          data: { isPremium: true, premiumTier: tier, premiumUntil: until, ...bonus },
-        });
-        
-        // Record purchase with server-side price
+      await prisma.$transaction(async (tx) => {
         const purchase = await tx.purchase.create({
           data: { userId: user.id, item: `premium_${tier}`, amount: plan.priceMonthly },
         });
-        
-        return { user, purchase };
+
+        await tx.user.update({
+          where: { id: user.id },
+          data: { isPremium: true, premiumTier: tier, premiumUntil: until },
+        });
+
+        // Grant perks atomically with ledger
+        await mutateBalance(tx, {
+          userId: user.id,
+          currency: "superlike",
+          amount: 5,
+          reason: "purchase",
+          referenceId: `purchase_${purchase.id}`,
+        });
+
+        if (tier === "platinum") {
+          await mutateBalance(tx, {
+            userId: user.id,
+            currency: "rose",
+            amount: 5,
+            reason: "purchase",
+            referenceId: `purchase_${purchase.id}`,
+          });
+        }
       });
 
       res.json({ ok: true, isPremium: true, tier, premiumUntil: until });
@@ -129,7 +142,6 @@ router.get("/store/:telegramId", async (req, res) => {
 });
 
 // POST /api/store/purchase  { telegramId, item }
-// CRITICAL: Uses atomic update to prevent race conditions
 router.post(
   "/store/purchase",
   authorizeTelegramId((req) => req.body.telegramId),
@@ -139,28 +151,35 @@ router.post(
     if (!def) return res.status(400).json({ error: "Invalid item" });
 
     try {
-      // CRITICAL: Use atomic increment to prevent race conditions
-      // This ensures two simultaneous purchases don't corrupt the balance
-      const data = {};
-      for (const [k, v] of Object.entries(def.grants)) {
-        data[k] = { increment: v };
-      }
-      
-      // CRITICAL: Transaction ensures purchase record and balance update are atomic
-      const result = await prisma.$transaction(async (tx) => {
-        const user = await tx.user.update({
-          where: { telegramId: telegramId.toString() },
-          data,
+      const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      let finalBalances;
+
+      await prisma.$transaction(async (tx) => {
+        const purchase = await tx.purchase.create({
+          data: { userId: user.id, item, amount: def.price },
         });
-        
-        await tx.purchase.create({ 
-          data: { userId: user.id, item, amount: def.price } // Server-side price
+
+        for (const [k, v] of Object.entries(def.grants)) {
+          const currency = k === "boostsLeft" ? "boost" : k === "superLikesLeft" ? "superlike" : "rose";
+          await mutateBalance(tx, {
+            userId: user.id,
+            currency,
+            amount: v,
+            reason: "purchase",
+            referenceId: `purchase_${purchase.id}`,
+          });
+        }
+
+        const fresh = await tx.user.findUnique({
+          where: { id: user.id },
+          select: { superLikesLeft: true, boostsLeft: true, rosesLeft: true },
         });
-        
-        return user;
+        finalBalances = fresh;
       });
 
-      res.json({ ok: true, balances: { superLikesLeft: result.superLikesLeft, boostsLeft: result.boostsLeft, rosesLeft: result.rosesLeft } });
+      res.json({ ok: true, balances: finalBalances });
     } catch (e) {
       console.error("Store purchase failed:", e);
       res.status(500).json({ error: "Purchase failed. Please try again." });
