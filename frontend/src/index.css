@@ -151,6 +151,7 @@
 }
 /* ═══════════════════════════════════════════════════════════
    Reset & Base Styles
+   Midnight Romantic Minimalism Foundation
 ═══════════════════════════════════════════════════════════ */
 
 * {
@@ -167,7 +168,7 @@ html, body {
 
 body {
   background-color: var(--bg-base);
-  color: var(--text-1);
+  color: var(--text-primary);
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -182,7 +183,7 @@ body {
   width: 100%;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar Styling - Minimal & Subtle */
 ::-webkit-scrollbar {
   width: 4px;
 }
@@ -192,19 +193,19 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--text-4);
-  border-radius: var(--radius-full);
+  background: var(--text-muted);
+  border-radius: var(--radius-pill);
 }
 
 /* Selection */
 ::selection {
-  background: var(--primary-soft);
-  color: var(--text-1);
+  background: var(--brand-primary-soft);
+  color: var(--text-primary);
 }
 
 /* Focus Outline */
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
 }
 

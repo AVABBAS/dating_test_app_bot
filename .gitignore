@@ -1,28 +1,16 @@
+```
+# Build artifacts
+dist/
+build/
+
+# Dependencies
 node_modules/
 
-# Build artifacts
-frontend/dist/
-
-# Environment variables
-.env
-.env.local
-.env.*
-
-# Prisma
-.prisma/
-
-# Logs
+# Logs and temp files
 *.log
-
-# Temporary files
 *.tmp
-*.swp
 
-# IDE
+# Editors
 .vscode/
 .idea/
-
-# OS
-.DS_Store
-Thumbs.db
 ```
