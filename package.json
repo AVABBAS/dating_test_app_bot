@@ -7,7 +7,7 @@
     "build": "npx prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "test": "node test/remediation.test.js"
+    "test": "node test/security-regression.test.js && node test/remediation.test.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
