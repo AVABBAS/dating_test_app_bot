@@ -214,7 +214,7 @@ model Event {
   hostId      Int?
   createdAt   DateTime @default(now())
 
-  host      User?           @relation("EventHost", fields: [hostId], references: [id])
+  host      User?           @relation("EventHost", fields: [hostId], references: [id], onDelete: SetNull)
   attendees EventAttendee[]
 
   @@index([startsAt])
@@ -257,7 +257,7 @@ model Report {
   createdAt  DateTime @default(now())
 
   fromUser User @relation("ReportFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser   User @relation("ReportTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  toUser User @relation("ReportTo", fields: [toUserId], references: [id], onDelete: Cascade)
 
   @@index([toUserId])
 }
@@ -266,7 +266,7 @@ model Report {
 model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int
-  type      String   // match | like | superlike | message | gift | system | event
+  type      String
   title     String
   body      String?
   data      Json?
@@ -282,10 +282,10 @@ model Notification {
 model LedgerEntry {
   id           Int      @id @default(autoincrement())
   userId       Int
-  currency     String   // 'superlike' | 'boost' | 'rose' | 'star' | 'fiat'
-  amount       Int      // positive for credit/grant, negative for debit/spent
+  currency     String
+  amount       Int
   balanceAfter Int
-  reason       String   // 'purchase' | 'swipe_superlike' | 'profile_boost' | 'send_rose' | 'admin_grant' | 'opening_balance'
+  reason       String
   referenceId  String?
   createdAt    DateTime @default(now())
 
@@ -294,4 +294,3 @@ model LedgerEntry {
   @@index([userId, currency])
   @@index([createdAt])
 }
-
