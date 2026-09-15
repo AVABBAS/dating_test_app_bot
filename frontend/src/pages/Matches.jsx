@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { Heart, MessageCircle } from 'lucide-react';
@@ -30,8 +30,15 @@ const Matches = ({ user }) => {
     return () => { cancelled = true; };
   }, [user?.telegramId]);
 
-  const newMatches = matches.filter(m => !m.lastMessage);
-  const conversations = matches.filter(m => !!m.lastMessage);
+  const { newMatches, conversations } = useMemo(() => {
+    const fresh = [];
+    const chats = [];
+    for (const match of matches) {
+      if (match.lastMessage) chats.push(match);
+      else fresh.push(match);
+    }
+    return { newMatches: fresh, conversations: chats };
+  }, [matches]);
 
   const formatTime = (iso) => {
     if (!iso) return '';
@@ -71,7 +78,7 @@ const Matches = ({ user }) => {
               return (
                 <div key={match.matchId} className="match-avatar-wrapper" onClick={() => navigate(`/chat/${match.matchId}`)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && navigate(`/chat/${match.matchId}`)}>
                   <div style={{ position: 'relative' }}>
-                    <img src={other.photoUrl} alt={other.firstName || 'کاربر'} className="match-avatar" onError={e => { e.currentTarget.style.visibility = 'hidden'; }} />
+                    <img src={other.photoUrl} alt={other.firstName || 'کاربر'} className="match-avatar" loading="lazy" decoding="async" onError={e => { e.currentTarget.style.visibility = 'hidden'; }} />
                     {other.isOnline && <span style={{ position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#34C759', border: '2px solid var(--bg-base)' }} />}
                   </div>
                   <span className="match-name">{other.firstName || 'کاربر'}</span>
@@ -92,7 +99,7 @@ const Matches = ({ user }) => {
           return (
             <div key={match.matchId} className="message-item" onClick={() => navigate(`/chat/${match.matchId}`)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && navigate(`/chat/${match.matchId}`)}>
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <img src={other.photoUrl} alt={other.firstName || 'کاربر'} className="message-avatar" onError={e => { e.currentTarget.style.visibility = 'hidden'; }} />
+                <img src={other.photoUrl} alt={other.firstName || 'کاربر'} className="message-avatar" loading="lazy" decoding="async" onError={e => { e.currentTarget.style.visibility = 'hidden'; }} />
                 {other.isOnline && <span style={{ position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#34C759', border: '2px solid var(--bg-base)' }} />}
               </div>
               <div className="message-content">
