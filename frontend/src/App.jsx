@@ -31,8 +31,8 @@ import Notifications from './pages/Notifications';
 
 const BottomNav = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const path = location.pathname;
+  const _location = useLocation(); // eslint-disable-line no-unused-vars
+  const path = _location.pathname;
 
   // Hide bottom nav on chat, onboarding and secondary/detail pages
   const hideOn = ['/chat', '/onboarding', '/premium', '/likes-you', '/store', '/top-picks',
@@ -57,8 +57,10 @@ const BottomNav = () => {
             key={p}
             className={`nav-item ${isActive ? 'active' : ''}`}
             onClick={() => navigate(p)}
+            aria-label={label}
+            aria-current={isActive ? 'page' : undefined}
           >
-            <Icon size={24} className="nav-icon" />
+            <Icon size={24} className="nav-icon" aria-hidden="true" />
             <span className="nav-label">{label}</span>
           </button>
         );
