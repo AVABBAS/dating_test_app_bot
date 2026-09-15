@@ -31,10 +31,10 @@ export default function Stories({ user }) {
   return (
     <div className="st-bar">
       {/* Add / my story */}
-      <button className="st-item" onClick={() => (mine ? openAt(mine) : setComposer(true))}>
+      <button type="button" className="st-item" onClick={() => (mine ? openAt(mine) : setComposer(true))}>
         <div className={`st-ring ${mine?.hasUnseen ? '' : 'mine'}`}>
           <div className="st-avatar">
-            <img src={user?.photoUrl || FALLBACK} alt="" onError={(e) => { e.target.src = FALLBACK; }} />
+            <img src={user?.photoUrl || FALLBACK} alt="" loading="eager" onError={(e) => { e.target.src = FALLBACK; }} />
           </div>
           <span className="st-add" onClick={(e) => { e.stopPropagation(); setComposer(true); }}><Plus size={13} /></span>
         </div>
@@ -42,10 +42,10 @@ export default function Stories({ user }) {
       </button>
 
       {others.map((g) => (
-        <button key={g.user.id} className="st-item" onClick={() => openAt(g)}>
+        <button type="button" key={g.user.id} className="st-item" onClick={() => openAt(g)}>
           <div className={`st-ring ${g.hasUnseen ? 'unseen' : 'seen'}`}>
             <div className="st-avatar">
-              <img src={g.user.photoUrl || FALLBACK} alt="" onError={(e) => { e.target.src = FALLBACK; }} />
+              <img src={g.user.photoUrl || FALLBACK} alt="" loading="lazy" decoding="async" onError={(e) => { e.target.src = FALLBACK; }} />
             </div>
           </div>
           <span className="st-label">{g.user.firstName}</span>
@@ -121,14 +121,14 @@ function StoryViewer({ groups, start, me, onClose, onViewed }) {
 
       <div className="sv-header">
         <div className="sv-user">
-          <img src={group.user.photoUrl || FALLBACK} alt="" onError={(e) => { e.target.src = FALLBACK; }} />
+          <img src={group.user.photoUrl || FALLBACK} alt="" loading="eager" decoding="async" onError={(e) => { e.target.src = FALLBACK; }} />
           <span>{group.isMine ? 'استوری تو' : group.user.firstName}</span>
           <span className="sv-time">{timeAgo(item.createdAt)}</span>
         </div>
-        <button className="sv-close" onClick={onClose}><X size={24} /></button>
+        <button type="button" className="sv-close" onClick={onClose}><X size={24} /></button>
       </div>
 
-      <img className="sv-image" src={item.imageUrl || FALLBACK} alt="" onError={(e) => { e.target.src = FALLBACK; }} />
+      <img className="sv-image" src={item.imageUrl || FALLBACK} alt="" loading="eager" decoding="async" onError={(e) => { e.target.src = FALLBACK; }} />
       {item.caption && <div className="sv-caption">{item.caption}</div>}
 
       {group.isMine && (
@@ -168,16 +168,16 @@ function StoryComposer({ user, onClose, onPosted }) {
       <div className="st-composer glass-panel" onClick={(e) => e.stopPropagation()}>
         <div className="st-composer-head">
           <h3>استوری جدید</h3>
-          <button onClick={onClose}><X size={20} /></button>
+          <button type="button" onClick={onClose}><X size={20} /></button>
         </div>
         <div className="st-preview">
-          <img src={url.trim() || user?.photoUrl || FALLBACK} alt="" onError={(e) => { e.target.src = FALLBACK; }} />
+          <img src={url.trim() || user?.photoUrl || FALLBACK} alt="" loading="eager" decoding="async" onError={(e) => { e.target.src = FALLBACK; }} />
           {caption && <div className="st-preview-caption">{caption}</div>}
         </div>
         <div className="st-presets">
           {preset.map((p) => (
-            <button key={p} className={`st-preset ${url === p ? 'active' : ''}`} onClick={() => setUrl(p)}>
-              <img src={p} alt="" />
+            <button type="button" key={p} className={`st-preset ${url === p ? 'active' : ''}`} onClick={() => setUrl(p)}>
+              <img src={p} alt="" loading="lazy" decoding="async" />
             </button>
           ))}
         </div>
@@ -188,7 +188,7 @@ function StoryComposer({ user, onClose, onPosted }) {
         <div className="st-composer-field">
           <input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="یک کپشن بنویس (اختیاری)" maxLength={120} />
         </div>
-        <button className="lp-btn lp-btn-primary" disabled={busy} onClick={post}>
+        <button type="button" className="lp-btn lp-btn-primary" disabled={busy} onClick={post}>
           <Send size={16} /> {busy ? 'در حال انتشار…' : 'انتشار استوری'}
         </button>
       </div>
