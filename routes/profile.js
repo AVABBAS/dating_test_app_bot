@@ -224,7 +224,7 @@ router.post(
           if (fresh && fresh.verificationStatus === "pending") {
             const updated = await prisma.user.update({
               where: { id: user.id },
-              data: { verificationStatus: "approved", isVerified: true },
+              data: { verificationStatus: "verified", isVerified: true },
             });
             await notify(updated, {
               type: "system",
