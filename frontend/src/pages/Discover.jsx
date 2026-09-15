@@ -79,6 +79,7 @@ const Discover = ({ user }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [exitDir, setExitDir] = useState(null);
   const startPos = useRef({ x: 0, y: 0 });
+  const startTime = useRef(0);
   const containerRef = useRef(null);
 
   useEffect(() => { fetchProfiles(); fetchWhoLikedMe(); }, [user]);
@@ -169,11 +170,12 @@ const Discover = ({ user }) => {
     }
   };
 
-  // Touch/Mouse handlers
+  // Touch/Mouse handlers with velocity tracking
   const onDragStart = (e) => {
     const x = e.touches ? e.touches[0].clientX : e.clientX;
     const y = e.touches ? e.touches[0].clientY : e.clientY;
     startPos.current = { x, y };
+    startTime.current = Date.now();
     setIsDragging(true);
   };
 
@@ -187,10 +189,24 @@ const Discover = ({ user }) => {
   const onDragEnd = () => {
     if (!isDragging) return;
     setIsDragging(false);
-    if (delta.x > 90) triggerExit('right', currentProfile);
-    else if (delta.x < -90) triggerExit('left', currentProfile);
-    else if (delta.y < -70 && Math.abs(delta.x) < 50) triggerExit('up', currentProfile);
-    else setDelta({ x: 0, y: 0 });
+    
+    const elapsed = Date.now() - startTime.current;
+    const velocityX = delta.x / (elapsed || 1);
+    const velocityY = delta.y / (elapsed || 1);
+    
+    // Velocity-based swipe detection
+    const SWIPE_THRESHOLD = 90;
+    const VELOCITY_THRESHOLD = 0.3;
+    
+    if (delta.x > SWIPE_THRESHOLD || velocityX > VELOCITY_THRESHOLD) {
+      triggerExit('right', currentProfile);
+    } else if (delta.x < -SWIPE_THRESHOLD || velocityX < -VELOCITY_THRESHOLD) {
+      triggerExit('left', currentProfile);
+    } else if ((delta.y < -70 && Math.abs(delta.x) < 50) || velocityY < -VELOCITY_THRESHOLD) {
+      triggerExit('up', currentProfile);
+    } else {
+      setDelta({ x: 0, y: 0 });
+    }
   };
 
   const onNextPhoto = (e) => {

@@ -79,9 +79,13 @@ const Chat = ({ user }) => {
     return () => clearInterval(typingPollRef.current);
   }, [matchId, user]);
 
-  // ── Auto scroll ────────────────────────────────────────
+  // ── Auto scroll with keyboard awareness ─────────────────
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      const isKeyboardOpen = document.activeElement === inputRef.current;
+      const scrollBehavior = isKeyboardOpen ? 'auto' : 'smooth';
+      messagesEndRef.current.scrollIntoView({ behavior: scrollBehavior });
+    }
   }, [messages, otherTyping]);
 
   // ── Send typing event ──────────────────────────────────

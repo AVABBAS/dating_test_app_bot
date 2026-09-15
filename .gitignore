@@ -1,11 +1,4 @@
 ```
 # Build artifacts
-dist/
-build/
-*.css.map
-*.js.map
-# Dependencies
-node_modules/
-# Temp files
-*.tmp
+frontend/dist/
 ```

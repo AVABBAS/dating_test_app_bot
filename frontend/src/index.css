@@ -229,6 +229,8 @@ button {
   cursor: pointer;
   font-family: inherit;
   color: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Input Defaults */
@@ -485,6 +487,8 @@ a {
   cursor: pointer;
   transition: all var(--transition-spring);
   box-shadow: var(--shadow-md);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-action:active {
@@ -503,6 +507,8 @@ a {
   background: var(--bg-surface);
   color: var(--gold);
   border: 1.5px solid rgba(255, 214, 10, 0.3);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .btn-pass {
@@ -511,6 +517,8 @@ a {
   background: var(--bg-surface);
   color: var(--color-danger);
   border: 1.5px solid rgba(255, 69, 58, 0.25);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .btn-super {
@@ -519,6 +527,8 @@ a {
   background: var(--bg-surface);
   color: var(--super-like);
   border: 1.5px solid rgba(0, 198, 255, 0.25);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .btn-like {
@@ -527,6 +537,8 @@ a {
   background: linear-gradient(135deg, var(--primary), #FF6E6E);
   color: var(--text-1);
   box-shadow: 0 6px 20px rgba(255, 45, 85, 0.45);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .btn-boost {
@@ -535,6 +547,8 @@ a {
   background: var(--bg-surface);
   color: var(--accent);
   border: 1.5px solid rgba(191, 90, 242, 0.3);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 /* ── Full Width Button ──────────────────────────────────── */

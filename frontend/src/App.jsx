@@ -87,6 +87,17 @@ const AppContent = () => {
         const tgData = getTelegramData();
         tgRef.current = tgData;
         
+        // Telegram WebApp setup
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+          tg.ready();
+          tg.expand(); // Request full viewport height
+          
+          // Set header color to match app theme
+          tg.setHeaderColor('#0B0B0F');
+          tg.setBackgroundColor('#0B0B0F');
+        }
+        
         if (!tgData.user) {
           setError('Please open this app inside Telegram.');
           setLoading(false);

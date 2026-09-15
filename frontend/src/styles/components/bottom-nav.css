@@ -33,6 +33,9 @@
   width: 20%;
   padding: var(--space-sm) 0;
   position: relative;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-item.active {
