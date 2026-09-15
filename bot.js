@@ -9,7 +9,24 @@ const bot = new Bot(token);
 // The API calls used by /api/user can happen on every Mini App launch.
 // Cache Telegram profile-photo lookups briefly to avoid repeated network calls.
 const PHOTO_CACHE_TTL_MS = 60 * 60 * 1000;
+const PHOTO_CACHE_MAX_ENTRIES = 5000;
 const photoCache = new Map();
+const fileCache = new Map();
+
+function pruneExpired(cache, now = Date.now()) {
+  if (cache.size <= PHOTO_CACHE_MAX_ENTRIES) return;
+  for (const [key, entry] of cache) {
+    if (entry.expiresAt <= now) cache.delete(key);
+    if (cache.size <= PHOTO_CACHE_MAX_ENTRIES) break;
+  }
+}
+
+function setCache(cache, key, value) {
+  const now = Date.now();
+  cache.set(key, { value, expiresAt: now + PHOTO_CACHE_TTL_MS });
+  pruneExpired(cache, now);
+}
+
 const originalGetUserProfilePhotos = bot.api.getUserProfilePhotos.bind(bot.api);
 const originalGetFile = bot.api.getFile.bind(bot.api);
 
@@ -17,20 +34,21 @@ bot.api.getUserProfilePhotos = async (userId, ...args) => {
   const key = String(userId);
   const cached = photoCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (cached) photoCache.delete(key);
 
   const value = await originalGetUserProfilePhotos(userId, ...args);
-  photoCache.set(key, { value, expiresAt: Date.now() + PHOTO_CACHE_TTL_MS });
+  setCache(photoCache, key, value);
   return value;
 };
 
-const fileCache = new Map();
 bot.api.getFile = async (fileId, ...args) => {
   const key = String(fileId);
   const cached = fileCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (cached) fileCache.delete(key);
 
   const value = await originalGetFile(fileId, ...args);
-  fileCache.set(key, { value, expiresAt: Date.now() + PHOTO_CACHE_TTL_MS });
+  setCache(fileCache, key, value);
   return value;
 };
 
