@@ -39,7 +39,7 @@ const Gifts = ({ user }) => {
 
       {gifts.length === 0 ? (
         <EmptyState
-          icon={<Gift size={40} color="var(--primary-color)" />}
+          icon={<Gift size={40} color="var(--brand-primary)" />}
           title="هنوز هدیه‌ای نگرفتی"
           sub="وقتی کسی برایت هدیه بفرستد، اینجا نمایش داده می‌شود."
         />

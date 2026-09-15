@@ -180,7 +180,7 @@ const Chat = ({ user }) => {
             <h3 className="chat-name">{matchInfo?.firstName || '...'}</h3>
             <span className="chat-status">
               {otherTyping ? (
-                <span style={{ color: 'var(--primary-color)', fontWeight: 600 }}>در حال تایپ...</span>
+                <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>در حال تایپ...</span>
               ) : matchInfo?.isOnline ? (
                 <span style={{ color: '#34C759' }}>آنلاین</span>
               ) : (
@@ -274,7 +274,7 @@ const Chat = ({ user }) => {
               {['رفتار نامناسب', 'اکانت جعلی', 'اسپم', 'محتوای مضر'].map(r => (
                 <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 14 }}>
                   <input type="radio" name="reason" value={r} onChange={e => setReportReason(e.target.value)}
-                    style={{ accentColor: 'var(--primary-color)' }} />
+                    style={{ accentColor: 'var(--brand-primary)' }} />
                   {r}
                 </label>
               ))}

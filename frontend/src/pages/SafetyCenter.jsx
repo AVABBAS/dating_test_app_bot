@@ -7,7 +7,7 @@ const TIPS = [
   { icon: <MapPin size={18} color="#34C759" />, bg: 'rgba(52,199,89,0.15)', title: 'در مکان عمومی قرار بگذار', sub: 'برای اولین ملاقات‌ها همیشه جای شلوغ و عمومی را انتخاب کن.' },
   { icon: <Lock size={18} color="#FFB300" />, bg: 'rgba(255,179,0,0.15)', title: 'اطلاعات شخصی‌ات را حفظ کن', sub: 'آدرس خانه، محل کار یا اطلاعات بانکی را با غریبه‌ها به اشتراک نگذار.' },
   { icon: <Eye size={18} color="var(--super-like)" />, bg: 'rgba(0,198,255,0.15)', title: 'به حسّت اعتماد کن', sub: 'اگر چیزی درست به نظر نمی‌رسد، گفتگو را متوقف کن و گزارش بده.' },
-  { icon: <Heart size={18} color="var(--primary-color)" />, bg: 'rgba(255,42,122,0.15)', title: 'با سرعت خودت پیش برو', sub: 'هیچ اجباری برای اشتراک‌گذاری یا ملاقات وجود ندارد. مرزهایت را حفظ کن.' },
+  { icon: <Heart size={18} color="var(--brand-primary)" />, bg: 'var(--brand-primary-rgb,0.15)', title: 'با سرعت خودت پیش برو', sub: 'هیچ اجباری برای اشتراک‌گذاری یا ملاقات وجود ندارد. مرزهایت را حفظ کن.' },
 ];
 
 const SafetyCenter = ({ user }) => {
@@ -59,7 +59,7 @@ const SafetyCenter = ({ user }) => {
           </div>
         </div>
         <div className="sc-tool">
-          <div className="sc-tool-icon" style={{ background: 'rgba(255,59,48,0.15)' }}><Ban size={18} color="var(--danger)" /></div>
+          <div className="sc-tool-icon" style={{ background: 'rgba(255,59,48,0.15)' }}><Ban size={18} color="var(--color-danger)" /></div>
           <div className="sc-tip-text">
             <span>مسدودسازی کاربر</span>
             <span className="sc-tip-sub">با مسدود کردن، مچ و پیام‌های شما حذف و کاربر دیگر به تو نمایش داده نمی‌شود.</span>

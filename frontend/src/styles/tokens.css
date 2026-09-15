@@ -56,6 +56,7 @@
   
   /* ── Gradients (Restricted Usage) ───────────────────────── */
   --gradient-card: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.58) 25%, rgba(0, 0, 0, 0.10) 52%, transparent 70%);
+  --gradient-brand: linear-gradient(135deg, #FF3B6B 0%, #A855F7 100%);
   --gradient-premium: linear-gradient(135deg, #A855F7 0%, #FFD60A 100%);
   
   /* ── Spacing System (4px Grid Base) ─────────────────────── */

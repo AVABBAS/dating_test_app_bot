@@ -71,7 +71,7 @@ const Events = ({ user }) => {
         <Loading />
       ) : events.length === 0 ? (
         <EmptyState
-          icon={<CalendarDays size={40} color="var(--secondary-color)" />}
+          icon={<CalendarDays size={40} color="var(--brand-secondary)" />}
           title="رویدادی در این دسته نیست"
           sub="دسته دیگری را امتحان کن یا بعداً سر بزن."
         />

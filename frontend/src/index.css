@@ -374,7 +374,7 @@ a {
   height: 52px;
   padding: 0 var(--space-xl);
   border-radius: var(--radius-full);
-  background: var(--gradient-primary);
+  background: var(--gradient-brand);
   color: var(--text-1);
   font-size: var(--font-body-lg);
   font-weight: var(--weight-medium);
@@ -509,7 +509,7 @@ a {
   width: 64px;
   height: 64px;
   background: var(--bg-surface);
-  color: var(--danger);
+  color: var(--color-danger);
   border: 1.5px solid rgba(255, 69, 58, 0.25);
 }
 
@@ -956,7 +956,7 @@ a {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
-  background: var(--gradient-primary);
+  background: var(--gradient-brand);
   color: var(--text-1);
   display: flex;
   align-items: center;
@@ -1051,7 +1051,7 @@ a {
 }
 
 .toast-success .toast-icon {
-  color: var(--success);
+  color: var(--color-success);
 }
 
 .toast-error {
@@ -1059,7 +1059,7 @@ a {
 }
 
 .toast-error .toast-icon {
-  color: var(--danger);
+  color: var(--color-danger);
 }
 
 .toast-info {
@@ -1179,7 +1179,7 @@ a {
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  background: var(--danger);
+  background: var(--color-danger);
   color: var(--text-1);
   font-size: 9px;
   font-weight: var(--weight-bold);
@@ -1335,7 +1335,7 @@ a {
   font-size: 40px;
   font-weight: var(--weight-bold);
   color: transparent;
-  background: var(--gradient-primary);
+  background: var(--gradient-brand);
   background-clip: text;
   -webkit-background-clip: text;
   margin-bottom: var(--space-3xl);

@@ -35,7 +35,7 @@ const Settings = ({ user }) => {
 
   const rows = [
     { group: 'اعلان‌ها', items: [
-      { key: 'notifyMatches', icon: <Heart size={18} color="var(--primary-color)" />, bg: 'rgba(255,42,122,0.15)', title: 'مچ‌های جدید', sub: 'وقتی با کسی مچ می‌شوی' },
+      { key: 'notifyMatches', icon: <Heart size={18} color="var(--brand-primary)" />, bg: 'var(--brand-primary-rgb,0.15)', title: 'مچ‌های جدید', sub: 'وقتی با کسی مچ می‌شوی' },
       { key: 'notifyLikes', icon: <Bell size={18} color="#FFB300" />, bg: 'rgba(255,179,0,0.15)', title: 'لایک‌ها', sub: 'وقتی کسی پروفایلت را می‌پسندد' },
       { key: 'notifyMessages', icon: <MessageCircle size={18} color="var(--super-like)" />, bg: 'rgba(0,198,255,0.15)', title: 'پیام‌ها', sub: 'وقتی پیام جدیدی می‌رسد' },
     ]},

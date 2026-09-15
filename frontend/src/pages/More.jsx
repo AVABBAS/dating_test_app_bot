@@ -19,7 +19,7 @@ const More = ({ user }) => {
   }, [user]);
 
   const tiles = [
-    { to: '/likes-you', icon: Heart, label: 'پسندیدنت', color: '#FF2A7A', bg: 'rgba(255,42,122,0.15)' },
+    { to: '/likes-you', icon: Heart, label: 'پسندیدنت', color: 'var(--brand-primary)', bg: 'var(--brand-primary-rgb,0.15)' },
     { to: '/top-picks', icon: Sparkles, label: 'منتخب‌ها', color: '#FFB300', bg: 'rgba(255,179,0,0.15)' },
     { to: '/store', icon: ShoppingBag, label: 'فروشگاه', color: '#34C759', bg: 'rgba(52,199,89,0.15)' },
     { to: '/events', icon: CalendarDays, label: 'رویدادها', color: '#8C30F5', bg: 'rgba(140,48,245,0.15)' },

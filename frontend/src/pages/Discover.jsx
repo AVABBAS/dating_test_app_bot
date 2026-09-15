@@ -208,7 +208,7 @@ const Discover = ({ user }) => {
     return (
       <div className="discover-page">
         <div className="discover-loading">
-          <HeartIcon size={52} color="#FF2A7A" style={{ animation: 'pulse 1s infinite alternate' }} />
+          <HeartIcon size={52} color="var(--brand-primary)" style={{ animation: 'pulse 1s infinite alternate' }} />
           <p>در حال یافتن نفرات...</p>
         </div>
       </div>
@@ -262,7 +262,7 @@ const Discover = ({ user }) => {
       {/* ── Header ── */}
       <div className="discover-header">
         <div className="discover-logo">
-          <Sparkles size={20} color="#FF2A7A" />
+          <Sparkles size={20} color="var(--brand-primary)" />
           <span>Lovely</span>
         </div>
         <div className="discover-header-actions">
