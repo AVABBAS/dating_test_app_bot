@@ -26,6 +26,7 @@ export const api = {
 
   // Discovery / social graph
   discover: (telegramId) => get(`/discover/${idPath(telegramId)}`),
+  explore: (telegramId, params) => get(`/explore/${idPath(telegramId)}${qs(params)}`),
   action: (fromTelegramId, toUserId, action) => post('/action', { fromTelegramId, toUserId, action }),
   matches: (telegramId) => get(`/matches/${idPath(telegramId)}`),
   likesYou: (id) => get(`/likes-you/${idPath(id)}`),
