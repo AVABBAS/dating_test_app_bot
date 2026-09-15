@@ -1,5 +1,14 @@
 import axios from 'axios';
 
+// Ensure all outgoing axios requests always include the signed initData header
+axios.interceptors.request.use((config) => {
+  const initData = window.Telegram?.WebApp?.initData;
+  if (initData) {
+    config.headers['x-telegram-init-data'] = initData;
+  }
+  return config;
+});
+
 export const getTelegramData = () => {
   if (window.Telegram && window.Telegram.WebApp) {
     const webApp = window.Telegram.WebApp;
