@@ -74,6 +74,7 @@ router.get("/premium/status/:telegramId", async (req, res) => {
 });
 
 // POST /api/premium/subscribe  { telegramId, tier }
+// CRITICAL: Uses transaction for atomicity - either all succeeds or all fails
 router.post(
   "/premium/subscribe",
   authorizeTelegramId((req) => req.body.telegramId),
@@ -83,20 +84,31 @@ router.post(
     if (!plan) return res.status(400).json({ error: "Invalid tier" });
 
     try {
+      // CRITICAL: Price is ALWAYS determined server-side from the plan catalog
+      // NEVER trust client-sent prices
       const until = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // +30 days
       const bonus = tier === "platinum" ? { superLikesLeft: { increment: 5 }, rosesLeft: { increment: 5 } } : { superLikesLeft: { increment: 5 } };
 
-      const user = await prisma.user.update({
-        where: { telegramId: telegramId.toString() },
-        data: { isPremium: true, premiumTier: tier, premiumUntil: until, ...bonus },
+      // CRITICAL: Atomic transaction - prevents partial updates
+      const result = await prisma.$transaction(async (tx) => {
+        // Update user with premium status
+        const user = await tx.user.update({
+          where: { telegramId: telegramId.toString() },
+          data: { isPremium: true, premiumTier: tier, premiumUntil: until, ...bonus },
+        });
+        
+        // Record purchase with server-side price
+        const purchase = await tx.purchase.create({
+          data: { userId: user.id, item: `premium_${tier}`, amount: plan.priceMonthly },
+        });
+        
+        return { user, purchase };
       });
-      await prisma.purchase.create({
-        data: { userId: user.id, item: `premium_${tier}`, amount: plan.priceMonthly },
-      });
+
       res.json({ ok: true, isPremium: true, tier, premiumUntil: until });
     } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "Server error" });
+      console.error("Premium subscription failed:", e);
+      res.status(500).json({ error: "Failed to activate premium. Please try again." });
     }
   }
 );
@@ -117,6 +129,7 @@ router.get("/store/:telegramId", async (req, res) => {
 });
 
 // POST /api/store/purchase  { telegramId, item }
+// CRITICAL: Uses atomic update to prevent race conditions
 router.post(
   "/store/purchase",
   authorizeTelegramId((req) => req.body.telegramId),
@@ -126,17 +139,31 @@ router.post(
     if (!def) return res.status(400).json({ error: "Invalid item" });
 
     try {
+      // CRITICAL: Use atomic increment to prevent race conditions
+      // This ensures two simultaneous purchases don't corrupt the balance
       const data = {};
-      for (const [k, v] of Object.entries(def.grants)) data[k] = { increment: v };
-      const user = await prisma.user.update({
-        where: { telegramId: telegramId.toString() },
-        data,
+      for (const [k, v] of Object.entries(def.grants)) {
+        data[k] = { increment: v };
+      }
+      
+      // CRITICAL: Transaction ensures purchase record and balance update are atomic
+      const result = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.update({
+          where: { telegramId: telegramId.toString() },
+          data,
+        });
+        
+        await tx.purchase.create({ 
+          data: { userId: user.id, item, amount: def.price } // Server-side price
+        });
+        
+        return user;
       });
-      await prisma.purchase.create({ data: { userId: user.id, item, amount: def.price } });
-      res.json({ ok: true, balances: { superLikesLeft: user.superLikesLeft, boostsLeft: user.boostsLeft, rosesLeft: user.rosesLeft } });
+
+      res.json({ ok: true, balances: { superLikesLeft: result.superLikesLeft, boostsLeft: result.boostsLeft, rosesLeft: result.rosesLeft } });
     } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "Server error" });
+      console.error("Store purchase failed:", e);
+      res.status(500).json({ error: "Purchase failed. Please try again." });
     }
   }
 );
