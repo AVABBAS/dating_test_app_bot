@@ -12,7 +12,7 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npx prisma generate
-RUN npx prisma migrate deploy || echo "Migration skipped (no migrations or DB not connected)"
+RUN npx prisma migrate deploy
 
 EXPOSE 3000
 CMD ["node", "server.js"]
