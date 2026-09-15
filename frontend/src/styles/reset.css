@@ -1,5 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    Reset & Base Styles
+   NOTE: Removed harmful global user-select and img pointer-events
+         that break chat text selection and accessibility
 ═══════════════════════════════════════════════════════════ */
 
 * {
@@ -20,7 +22,6 @@ body {
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  user-select: none;
   -webkit-tap-highlight-color: transparent;
   direction: rtl;
 }
@@ -56,12 +57,10 @@ body {
   outline-offset: 2px;
 }
 
-/* Image Defaults */
+/* Image Defaults - allow interaction where needed */
 img {
   max-width: 100%;
   display: block;
-  pointer-events: none;
-  user-select: none;
 }
 
 /* Button Defaults */

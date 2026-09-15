@@ -60,8 +60,6 @@ function validateTelegramData(initData, botToken) {
   return computedHash === hash;
 }
 
-
-
 // Touch lastSeen so "online" (computed from lastSeen) stays fresh while active.
 async function touchLastSeen(userId) {
   try {
@@ -159,7 +157,6 @@ app.get("/api/discover/:telegramId", async (req, res) => {
   const { telegramId } = req.params;
 
   try {
-    await sweepExpiredBoosts();
     const currentUser = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
     if (!currentUser) return res.status(404).json({ error: "User not found" });
 
