@@ -171,10 +171,11 @@ body {
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  user-select: none;
   -webkit-tap-highlight-color: transparent;
   direction: rtl;
 }
+
+/* Note: user-select is intentionally NOT set globally to allow text selection in Chat, Profile, etc. */
 
 #root {
   height: 100%;
@@ -211,6 +212,11 @@ body {
 img {
   max-width: 100%;
   display: block;
+  /* Note: pointer-events and user-select are NOT set globally to allow interaction in Chat, Profile, etc. */
+}
+
+/* Images in swipe cards should not interfere with gestures */
+.swipe-card img, .card-image {
   pointer-events: none;
   user-select: none;
 }

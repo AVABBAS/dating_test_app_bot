@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { getTelegramData, API_URL } from './telegram';
 import axios from 'axios';
@@ -75,8 +75,8 @@ const AppContent = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-
-  const initialized = React.useRef(false);
+  const tgRef = useRef(null);
+  const initialized = useRef(false);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -85,6 +85,8 @@ const AppContent = () => {
     const initApp = async () => {
       try {
         const tgData = getTelegramData();
+        tgRef.current = tgData;
+        
         if (!tgData.user) {
           setError('Please open this app inside Telegram.');
           setLoading(false);
@@ -120,6 +122,48 @@ const AppContent = () => {
     initApp();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Telegram BackButton integration
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return;
+
+    const handleBack = () => {
+      const currentPath = location.pathname;
+      
+      // Define navigation hierarchy
+      const detailPages = ['/chat', '/premium', '/likes-you', '/store', '/top-picks',
+        '/prompts', '/verification', '/gifts', '/settings', '/safety', '/filters',
+        '/events', '/leaderboard', '/passport', '/notifications'];
+      
+      if (detailPages.some(p => currentPath.startsWith(p))) {
+        navigate(-1);
+      } else if (currentPath !== '/') {
+        navigate('/');
+      }
+    };
+
+    tg.BackButton.onClick(handleBack);
+    
+    return () => {
+      tg.BackButton.offClick(handleBack);
+    };
+  }, [location, navigate]);
+
+  // Update BackButton visibility based on current route
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return;
+
+    const currentPath = location.pathname;
+    const rootPaths = ['/', '/explore', '/matches', '/profile', '/more'];
+    
+    if (rootPaths.includes(currentPath)) {
+      tg.BackButton.hide();
+    } else {
+      tg.BackButton.show();
+    }
+  }, [location]);
 
   // Allow child pages to update the shared user object (e.g. after subscribing or editing profile)
   const patchUser = (patch) => setUser((u) => ({ ...u, ...patch }));
