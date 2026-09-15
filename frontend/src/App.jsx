@@ -3,14 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import { Compass, Flame, Heart, LayoutGrid, User, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { getTelegramData, API_URL } from './telegram';
-import Discover from './pages/Discover';
-import Explore from './pages/Explore';
-import Matches from './pages/Matches';
-import Chat from './pages/Chat';
-import Profile from './pages/Profile';
-import Onboarding from './pages/Onboarding';
-import More from './pages/More';
 
+const Discover = lazy(() => import('./pages/Discover'));
+const Explore = lazy(() => import('./pages/Explore'));
+const Matches = lazy(() => import('./pages/Matches'));
+const Chat = lazy(() => import('./pages/Chat'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
+const More = lazy(() => import('./pages/More'));
 const Premium = lazy(() => import('./pages/Premium'));
 const LikesYou = lazy(() => import('./pages/LikesYou'));
 const Store = lazy(() => import('./pages/Store'));
