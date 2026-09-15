@@ -36,7 +36,7 @@ const Verification = ({ user, onChange }) => {
             setStatus(s);
             if (s.isVerified) {
               clearInterval(poll.current);
-              onChange?.({ isVerified: true, verificationStatus: 'approved' });
+              onChange?.({ isVerified: true, verificationStatus: 'verified' });
               tg.hapticNotification('success');
               showToast('پروفایلت تأیید شد ✅');
             }
