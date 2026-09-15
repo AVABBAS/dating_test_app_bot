@@ -10,7 +10,7 @@ const TIPS = [
   { icon: <Heart size={18} color="var(--brand-primary)" />, bg: 'var(--brand-primary-rgb,0.15)', title: 'با سرعت خودت پیش برو', sub: 'هیچ اجباری برای اشتراک‌گذاری یا ملاقات وجود ندارد. مرزهایت را حفظ کن.' },
 ];
 
-const SafetyCenter = ({ user }) => {
+const SafetyCenter = () => {
   const [reasons, setReasons] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,14 +27,12 @@ const SafetyCenter = ({ user }) => {
     <div className="lp-page">
       <PageHeader title="مرکز ایمنی" subtitle="امنیت تو اولویت ماست" />
 
-      {/* Hero */}
       <div className="sc-hero">
         <div className="sc-hero-badge"><Shield size={40} color="#fff" /></div>
         <h1>با خیال راحت آشنا شو</h1>
         <p>Lovely متعهد است فضایی امن بسازد. این نکات به تو کمک می‌کنند تجربه‌ای بی‌دغدغه داشته باشی.</p>
       </div>
 
-      {/* Safety tips */}
       <div className="lp-section-label">نکات ایمنی</div>
       <div className="sc-tips">
         {TIPS.map((t, i) => (
@@ -48,7 +46,6 @@ const SafetyCenter = ({ user }) => {
         ))}
       </div>
 
-      {/* Report & block explainer */}
       <div className="lp-section-label">گزارش و مسدودسازی</div>
       <div className="lp-card sc-tools">
         <div className="sc-tool">
@@ -67,7 +64,6 @@ const SafetyCenter = ({ user }) => {
         </div>
       </div>
 
-      {/* Reportable reasons */}
       <div className="lp-card sc-reasons">
         <div className="sc-reasons-title"><AlertTriangle size={15} color="var(--text-secondary)" /> چه مواردی قابل گزارش هستند؟</div>
         <div className="sc-reason-chips">
@@ -77,12 +73,11 @@ const SafetyCenter = ({ user }) => {
         </div>
       </div>
 
-      {/* Emergency */}
       <div className="sc-emergency">
         <Phone size={18} color="#fff" />
         <div>
           <b>در شرایط اضطراری</b>
-          <span>اگر در خطر فوری هستی، بی‌درنگ با اورژانس ۱۱۰ تماس بگیر.</span>
+          <span>اگر در خطر فوری هستی، بی‌درنگ با خدمات اضطراری محل زندگی‌ات تماس بگیر.</span>
         </div>
       </div>
     </div>
