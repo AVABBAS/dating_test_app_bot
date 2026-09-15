@@ -1,57 +1,58 @@
 import axios from 'axios';
 import { API_URL } from './telegram';
 
-const qs = (params = {}) => {
-  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '');
-  return entries.length ? '?' + entries.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&') : '';
+const idPath = (id, name = 'telegramId') => {
+  if (id === undefined || id === null || String(id).trim() === '') throw new Error(`${name} is required`);
+  return encodeURIComponent(String(id));
 };
 
-const get = (u) => axios.get(`${API_URL}${u}`).then((r) => r.data);
-const post = (u, b = {}) => axios.post(`${API_URL}${u}`, b).then((r) => r.data);
-const put = (u, b = {}) => axios.put(`${API_URL}${u}`, b).then((r) => r.data);
+const qs = (params = {}) => {
+  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '');
+  return entries.length ? '?' + entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&') : '';
+};
 
-// Thin wrappers over every API endpoint the new sections use.
+const request = (method, u, b) => axios({ method, url: `${API_URL}${u}`, data: b, timeout: 15000 }).then((r) => r.data);
+const get = (u) => request('get', u);
+const post = (u, b = {}) => request('post', u, b);
+const put = (u, b = {}) => request('put', u, b);
+
 export const api = {
-  // ── Monetization ──
   premiumPlans: () => get('/premium/plans'),
-  premiumStatus: (id) => get(`/premium/status/${id}`),
+  premiumStatus: (id) => get(`/premium/status/${idPath(id)}`),
   subscribe: (telegramId, tier) => post('/premium/subscribe', { telegramId, tier }),
-  store: (id) => get(`/store/${id}`),
+  store: (id) => get(`/store/${idPath(id)}`),
   purchase: (telegramId, item) => post('/store/purchase', { telegramId, item }),
-  likesYou: (id) => get(`/likes-you/${id}`),
-  topPicks: (id) => get(`/top-picks/${id}`),
+  likesYou: (id) => get(`/likes-you/${idPath(id)}`),
+  topPicks: (id) => get(`/top-picks/${idPath(id)}`),
 
-  // ── Profile & discovery ──
-  stories: (id) => get(`/stories/${id}`),
+  stories: (id) => get(`/stories/${idPath(id)}`),
   addStory: (telegramId, imageUrl, caption) => post('/stories', { telegramId, imageUrl, caption }),
-  viewStory: (storyId, telegramId) => post(`/stories/${storyId}/view`, { telegramId }),
+  viewStory: (storyId, telegramId) => post(`/stories/${idPath(storyId, 'storyId')}/view`, { telegramId }),
   promptCatalog: () => get('/prompts/catalog'),
-  getPrompts: (id) => get(`/prompts/${id}`),
-  setPrompts: (id, prompts) => put(`/prompts/${id}`, { prompts }),
-  verificationStatus: (id) => get(`/verification/${id}`),
-  requestVerification: (id) => post(`/verification/${id}`, {}),
-  gifts: (id) => get(`/gifts/${id}`),
+  getPrompts: (id) => get(`/prompts/${idPath(id)}`),
+  setPrompts: (id, prompts) => put(`/prompts/${idPath(id)}`, { prompts }),
+  verificationStatus: (id) => get(`/verification/${idPath(id)}`),
+  requestVerification: (id) => post(`/verification/${idPath(id)}`, {}),
+  gifts: (id) => get(`/gifts/${idPath(id)}`),
   sendGift: (fromTelegramId, toUserId, type, message) => post('/gifts', { fromTelegramId, toUserId, type, message }),
 
-  // ── Settings / safety / filters ──
-  getPreferences: (id) => get(`/preferences/${id}`),
-  setPreferences: (id, p) => put(`/preferences/${id}`, p),
-  getSettings: (id) => get(`/settings/${id}`),
-  setSettings: (id, s) => put(`/settings/${id}`, s),
+  getPreferences: (id) => get(`/preferences/${idPath(id)}`),
+  setPreferences: (id, p) => put(`/preferences/${idPath(id)}`, p),
+  getSettings: (id) => get(`/settings/${idPath(id)}`),
+  setSettings: (id, s) => put(`/settings/${idPath(id)}`, s),
   reportReasons: () => get('/report/reasons'),
   report: (fromTelegramId, toUserId, reason) => post('/report', { fromTelegramId, toUserId, reason }),
   block: (fromTelegramId, toUserId) => post('/block', { fromTelegramId, toUserId }),
 
-  // ── Social & events ──
   events: (params) => get(`/events${qs(params)}`),
-  event: (id, telegramId) => get(`/events/${id}${qs({ telegramId })}`),
-  joinEvent: (id, telegramId) => post(`/events/${id}/join`, { telegramId }),
-  leaveEvent: (id, telegramId) => post(`/events/${id}/leave`, { telegramId }),
+  event: (id, telegramId) => get(`/events/${idPath(id, 'eventId')}${qs({ telegramId })}`),
+  joinEvent: (id, telegramId) => post(`/events/${idPath(id, 'eventId')}/join`, { telegramId }),
+  leaveEvent: (id, telegramId) => post(`/events/${idPath(id, 'eventId')}/leave`, { telegramId }),
   leaderboard: () => get('/leaderboard'),
-  setPassport: (id, body) => put(`/passport/${id}`, body),
+  setPassport: (id, body) => put(`/passport/${idPath(id)}`, body),
   passportCities: () => get('/passport/cities'),
-  notifications: (id) => get(`/notifications/${id}`),
-  readNotifications: (id, notifId) => post(`/notifications/${id}/read`, notifId ? { id: notifId } : {}),
+  notifications: (id) => get(`/notifications/${idPath(id)}`),
+  readNotifications: (id, notifId) => post(`/notifications/${idPath(id)}/read`, notifId ? { id: notifId } : {}),
 };
 
 export { API_URL };
