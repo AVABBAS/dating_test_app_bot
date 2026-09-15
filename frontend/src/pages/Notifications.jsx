@@ -5,7 +5,7 @@ import { Bell, Heart, Star, MessageCircle, Gift, CalendarDays, CheckCheck } from
 
 const TYPE_META = {
   match:     { icon: Heart,         color: 'var(--brand-primary)', bg: 'var(--brand-primary-rgb,0.15)' },
-  like:      { icon: Heart,         color: 'var(--brand-primary-light)', bg: 'var(--brand-primary-rgb,0.12)' },
+  like:      { icon: Heart,          color: 'var(--brand-primary-light)', bg: 'var(--brand-primary-rgb,0.12)' },
   superlike: { icon: Star,          color: '#00C6FF', bg: 'rgba(0,198,255,0.15)' },
   message:   { icon: MessageCircle, color: '#34C759', bg: 'rgba(52,199,89,0.15)' },
   gift:      { icon: Gift,          color: '#FFB300', bg: 'rgba(255,179,0,0.15)' },
@@ -34,11 +34,18 @@ const Notifications = ({ user }) => {
       .finally(() => setLoading(false));
   }, [user]);
 
-  const markAll = () => {
+  const markAll = async () => {
     if (!unread) return;
+    const previousItems = items;
+    const previousUnread = unread;
     setItems((list) => list.map((n) => ({ ...n, read: true })));
     setUnread(0);
-    api.readNotifications(user.telegramId).catch(() => {});
+    try {
+      await api.readNotifications(user.telegramId);
+    } catch {
+      setItems(previousItems);
+      setUnread(previousUnread);
+    }
   };
 
   if (loading) return <><PageHeader title="اعلان‌ها" /><Loading /></>;
@@ -48,7 +55,7 @@ const Notifications = ({ user }) => {
       <PageHeader
         title="اعلان‌ها"
         subtitle={unread ? `${unread} اعلان خوانده‌نشده` : 'همه‌چیز به‌روز است'}
-        right={unread ? <button className="nt-markall" onClick={markAll}><CheckCheck size={18} /></button> : null}
+        right={unread ? <button type="button" className="nt-markall" onClick={markAll}><CheckCheck size={18} /></button> : null}
       />
 
       {items.length === 0 ? (
