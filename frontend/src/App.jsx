@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Compass, Flame, Heart, LayoutGrid, User, ArrowRight } from 'lucide-react';
 import axios from 'axios';
@@ -10,20 +10,21 @@ import Chat from './pages/Chat';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
 import More from './pages/More';
-import Premium from './pages/Premium';
-import LikesYou from './pages/LikesYou';
-import Store from './pages/Store';
-import TopPicks from './pages/TopPicks';
-import Prompts from './pages/Prompts';
-import Verification from './pages/Verification';
-import Gifts from './pages/Gifts';
-import Settings from './pages/Settings';
-import SafetyCenter from './pages/SafetyCenter';
-import Filters from './pages/Filters';
-import Events from './pages/Events';
-import Leaderboard from './pages/Leaderboard';
-import Passport from './pages/Passport';
-import Notifications from './pages/Notifications';
+
+const Premium = lazy(() => import('./pages/Premium'));
+const LikesYou = lazy(() => import('./pages/LikesYou'));
+const Store = lazy(() => import('./pages/Store'));
+const TopPicks = lazy(() => import('./pages/TopPicks'));
+const Prompts = lazy(() => import('./pages/Prompts'));
+const Verification = lazy(() => import('./pages/Verification'));
+const Gifts = lazy(() => import('./pages/Gifts'));
+const Settings = lazy(() => import('./pages/Settings'));
+const SafetyCenter = lazy(() => import('./pages/SafetyCenter'));
+const Filters = lazy(() => import('./pages/Filters'));
+const Events = lazy(() => import('./pages/Events'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard'));
+const Passport = lazy(() => import('./pages/Passport'));
+const Notifications = lazy(() => import('./pages/Notifications'));
 
 const primaryNav = [
   { path: '/', label: 'کشف', icon: Flame },
@@ -66,13 +67,14 @@ function TelegramChrome({ children }) {
     } catch { return undefined; }
   }, [location.pathname, navigate, showBack]);
   const showBrowserBack = showBack && !window.Telegram?.WebApp?.BackButton;
-  return <div className="app-shell"><div className="ambient ambient-one" aria-hidden="true" /><div className="ambient ambient-two" aria-hidden="true" />{showBrowserBack && <button type="button" className="mobile-back" onClick={() => safeBack(navigate, location.pathname)} aria-label="بازگشت"><ArrowRight size={20} /></button>}<main className={`page-container ${isRoot ? 'page-root' : ''}`}>{children}</main>{!isOnboarding && isRoot && <BottomNav />}</div>;
+  return <div className="app-shell"><div className="ambient ambient-one" aria-hidden="true" /><div className="ambient ambient-two" aria-hidden="true" /><main className={`page-container ${isRoot ? 'page-root' : ''}`}>{children}</main>{showBrowserBack && <button type="button" className="mobile-back" onClick={() => safeBack(navigate, location.pathname)} aria-label="بازگشت"><ArrowRight size={20} /></button>}{!isOnboarding && isRoot && <BottomNav />}</div>;
 }
 function BottomNav() {
   const location = useLocation(); const navigate = useNavigate();
   return <nav className="bottom-nav" aria-label="ناوبری اصلی"><div className="bottom-nav-inner">{primaryNav.map(({ path, label, icon: Icon }) => { const active = location.pathname === path; return <button type="button" key={path} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => navigate(path)}><span className="nav-icon-wrap"><Icon size={21} strokeWidth={active ? 2.6 : 2} /></span><span>{label}</span></button>; })}</div></nav>;
 }
 function LoadingScreen() { return <div className="boot-screen" role="status" aria-live="polite"><div className="brand-mark" aria-hidden="true">♥</div><div className="boot-copy"><strong>Vibe</strong><span>آدم مناسب، نه فقط یک پروفایل</span></div><div className="boot-loader" aria-hidden="true"><i /><i /><i /></div></div>; }
+function RouteLoading() { return <div className="route-loading" role="status" aria-live="polite"><span>در حال بارگذاری…</span></div>; }
 function ErrorScreen({ message, onRetry }) { return <div className="boot-screen error-state" role="alert"><div className="brand-mark" aria-hidden="true">!</div><h2>Vibe در دسترس نیست</h2><p>{message}</p><button type="button" className="primary-btn" onClick={onRetry}>تلاش دوباره</button></div>; }
 function ProfileGate({ user, children }) { const location = useLocation(); if (!user) return null; if (location.pathname === '/onboarding') return children; if (user.age == null) return <Navigate to="/onboarding" replace />; return children; }
 
@@ -93,10 +95,10 @@ function AppContent() {
   const completeOnboarding = (updatedUser) => { patchUser(updatedUser); navigate('/', { replace: true }); };
   const logout = () => window.Telegram?.WebApp?.close?.();
   if (loading) return <LoadingScreen />; if (error) return <ErrorScreen message={error} onRetry={boot} />; if (!user) return <ErrorScreen message="اطلاعات کاربر دریافت نشد." onRetry={boot} />;
-  return <TelegramChrome><ProfileGate user={user}><Routes>
+  return <TelegramChrome><ProfileGate user={user}><Suspense fallback={<RouteLoading />}><Routes>
     <Route path="/" element={<Discover user={user} />} /><Route path="/explore" element={<Explore user={user} />} /><Route path="/matches" element={<Matches user={user} />} /><Route path="/chat/:matchId" element={<Chat user={user} />} /><Route path="/profile" element={<Profile user={user} onChange={patchUser} onLogout={logout} />} />
     <Route path="/onboarding" element={<Onboarding user={user} onComplete={completeOnboarding} />} /><Route path="/more" element={<More user={user} />} /><Route path="/premium" element={<Premium user={user} onChange={patchUser} />} /><Route path="/likes-you" element={<LikesYou user={user} />} /><Route path="/store" element={<Store user={user} onChange={patchUser} />} /><Route path="/top-picks" element={<TopPicks user={user} />} />
     <Route path="/prompts" element={<Prompts user={user} />} /><Route path="/verification" element={<Verification user={user} onChange={patchUser} />} /><Route path="/gifts" element={<Gifts user={user} />} /><Route path="/settings" element={<Settings user={user} />} /><Route path="/safety" element={<SafetyCenter user={user} />} /><Route path="/filters" element={<Filters user={user} />} /><Route path="/events" element={<Events user={user} />} /><Route path="/leaderboard" element={<Leaderboard user={user} />} /><Route path="/passport" element={<Passport user={user} onChange={patchUser} />} /><Route path="/notifications" element={<Notifications user={user} />} /><Route path="*" element={<Navigate to="/" replace />} />
-  </Routes></ProfileGate></TelegramChrome>;
+  </Routes></Suspense></ProfileGate></TelegramChrome>;
 }
 export default function App() { return <BrowserRouter><AppContent /></BrowserRouter>; }
