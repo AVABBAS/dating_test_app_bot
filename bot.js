@@ -52,10 +52,17 @@ bot.api.getFile = async (fileId, ...args) => {
   return value;
 };
 
+// Cache-bust the Telegram WebView URL whenever the application build changes.
+// This is important because Telegram Android can retain the previous HTML/assets.
+const MINI_APP_VERSION = "20260915-4a0b7718";
+
 bot.command("start", (ctx) => {
+  const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  const miniAppUrl = `${baseUrl}${separator}v=${MINI_APP_VERSION}`;
   const keyboard = new InlineKeyboard().webApp(
     "Open Dating App ❤️",
-    process.env.FRONTEND_URL || "http://localhost:5173" // in production this will be the actual URL
+    miniAppUrl
   );
 
   return ctx.reply("Welcome to the Dating Bot! Click below to find your match. \n\nPlease note: you need to use this on a device that supports Telegram Web Apps.", {
