@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { API_URL } from '../telegram';
 import { ArrowLeft, Send, MoreVertical, Flag } from 'lucide-react';
+import { api } from '../api';
 import { goBack } from '../components/UI';
 
 const QUICK_EMOJIS = ['❤️', '😍', '😂', '🔥', '👋', '😊', '🌹', '✨', '💯', '🙏'];
-const TypingDots = () => <div className="typing-indicator"><span /><span /><span /></div>;
 
 const Chat = ({ user }) => {
   const { matchId } = useParams();
@@ -26,10 +24,10 @@ const Chat = ({ user }) => {
   useEffect(() => {
     if (!user?.telegramId || !matchId) return undefined;
     let cancelled = false;
-    axios.get(`${API_URL}/matches/${user.telegramId}`)
-      .then((res) => {
+    api.matches(user.telegramId)
+      .then(data => {
         if (cancelled) return;
-        const match = (Array.isArray(res.data) ? res.data : []).find((m) => String(m.matchId) === String(matchId));
+        const match = (Array.isArray(data) ? data : []).find(m => String(m.matchId) === String(matchId));
         if (match?.user) setMatchInfo(match.user);
       })
       .catch(() => {});
@@ -39,9 +37,11 @@ const Chat = ({ user }) => {
   const fetchMessages = useCallback(async () => {
     if (!user?.telegramId || !matchId) return;
     try {
-      const res = await axios.get(`${API_URL}/messages/${matchId}`, { params: { telegramId: user.telegramId } });
-      setMessages(Array.isArray(res.data) ? res.data : []);
-    } catch { /* keep current messages on transient failures */ }
+      const data = await api.messages(matchId, user.telegramId);
+      setMessages(Array.isArray(data) ? data : []);
+    } catch {
+      // Keep the current conversation visible during transient failures.
+    }
   }, [matchId, user?.telegramId]);
 
   useEffect(() => {
@@ -67,12 +67,12 @@ const Chat = ({ user }) => {
     localStorage.removeItem(draftKey);
     setSending(true);
     const tempId = `temp-${Date.now()}`;
-    setMessages((prev) => [...prev, { id: tempId, text: msg, isMine: true, createdAt: new Date().toISOString(), temp: true }]);
+    setMessages(prev => [...prev, { id: tempId, text: msg, isMine: true, createdAt: new Date().toISOString(), temp: true }]);
     try {
-      await axios.post(`${API_URL}/messages`, { fromTelegramId: user.telegramId, matchId, text: msg });
+      await api.sendMessage(matchId, user.telegramId, msg);
       await fetchMessages();
     } catch {
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setMessages(prev => prev.filter(m => m.id !== tempId));
       setInput(msg);
       localStorage.setItem(draftKey, msg);
     } finally {
@@ -83,11 +83,13 @@ const Chat = ({ user }) => {
   const handleReport = async () => {
     if (!reportReason.trim() || !matchInfo?.id || !user?.telegramId) return;
     try {
-      await axios.post(`${API_URL}/report`, { fromTelegramId: user.telegramId, toUserId: matchInfo.id, reason: reportReason });
+      await api.report(user.telegramId, matchInfo.id, reportReason);
       setShowReport(false);
       setShowMenu(false);
       setReportReason('');
-    } catch { /* silent */ }
+    } catch {
+      // Keep the modal open so the user can retry.
+    }
   };
 
   const formatTime = (iso) => {
@@ -105,18 +107,18 @@ const Chat = ({ user }) => {
         <button type="button" className="back-btn" onClick={() => goBack(navigate, '/matches')} aria-label="بازگشت"><ArrowLeft size={22} /></button>
         <div className="chat-user-info">
           <div className="chat-avatar-wrap">
-            {matchInfo?.photoUrl ? <img src={matchInfo.photoUrl} alt={matchInfo.firstName || ''} className="chat-avatar" onError={(e) => { e.target.style.display = 'none'; }} /> : <div className="chat-avatar chat-avatar-placeholder">👤</div>}
+            {matchInfo?.photoUrl ? <img src={matchInfo.photoUrl} alt={matchInfo.firstName || ''} className="chat-avatar" onError={e => { e.currentTarget.style.display = 'none'; }} /> : <div className="chat-avatar chat-avatar-placeholder">👤</div>}
             {matchInfo?.isOnline && <span className="chat-online-dot" />}
           </div>
           <div><h3 className="chat-name">{matchInfo?.firstName || 'مخاطب'}</h3><span className="chat-status">گفتگو</span></div>
         </div>
-        <button type="button" className="chat-menu-btn" onClick={() => setShowMenu((v) => !v)} aria-label="منو"><MoreVertical size={20} /></button>
+        <button type="button" className="chat-menu-btn" onClick={() => setShowMenu(v => !v)} aria-label="منو"><MoreVertical size={20} /></button>
         {showMenu && <div className="chat-dropdown"><button type="button" className="chat-dropdown-item" onClick={() => { setShowReport(true); setShowMenu(false); }}><Flag size={15} /> گزارش کاربر</button></div>}
       </div>
 
       <div className="chat-messages" onClick={() => setShowMenu(false)}>
         {messages.length === 0 && <div className="chat-empty"><div style={{ fontSize: 44 }}>👋</div><p>سلام بده! اولین پیام رو بفرست</p></div>}
-        {messages.map((msg) => (
+        {messages.map(msg => (
           <div key={msg.id} className={`msg-row ${msg.isMine ? 'msg-row-me' : 'msg-row-them'}`}>
             <div className={`message-bubble ${msg.isMine ? 'message-sent' : 'message-received'} ${msg.temp ? 'msg-temp' : ''}`}>
               {msg.text}
@@ -127,18 +129,18 @@ const Chat = ({ user }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="emoji-bar">{QUICK_EMOJIS.map((emoji) => <button type="button" key={emoji} className="emoji-btn" onClick={() => handleSend(emoji)} disabled={sending}>{emoji}</button>)}</div>
-      <form className="chat-input-container" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
+      <div className="emoji-bar">{QUICK_EMOJIS.map(emoji => <button type="button" key={emoji} className="emoji-btn" onClick={() => handleSend(emoji)} disabled={sending}>{emoji}</button>)}</div>
+      <form className="chat-input-container" onSubmit={e => { e.preventDefault(); handleSend(); }}>
         <input ref={inputRef} type="text" className="chat-input" placeholder="پیامت رو بنویس..." value={input} onChange={handleInputChange} disabled={sending} maxLength={2000} />
         <button type="submit" className="send-btn" disabled={!input.trim() || sending} aria-label="ارسال"><Send size={20} /></button>
       </form>
 
       {showReport && (
         <div className="pf-modal-overlay" onClick={() => setShowReport(false)}>
-          <div className="pf-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="pf-modal" onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 36, marginBottom: 10 }}>🚩</div><h3>گزارش کاربر</h3><p>چرا می‌خواهی این کاربر را گزارش دهی؟</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, textAlign: 'right' }}>
-              {['رفتار نامناسب', 'اکانت جعلی', 'اسپم', 'محتوای مضر'].map((r) => <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 14 }}><input type="radio" name="reason" value={r} checked={reportReason === r} onChange={(e) => setReportReason(e.target.value)} />{r}</label>)}
+              {['رفتار نامناسب', 'اکانت جعلی', 'اسپم', 'محتوای مضر'].map(r => <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 14 }}><input type="radio" name="reason" value={r} checked={reportReason === r} onChange={e => setReportReason(e.target.value)} />{r}</label>)}
             </div>
             <div className="pf-modal-btns"><button type="button" className="pf-modal-cancel" onClick={() => setShowReport(false)}>لغو</button><button type="button" className="pf-modal-confirm" onClick={handleReport} disabled={!reportReason || !matchInfo?.id}>ارسال گزارش</button></div>
           </div>
