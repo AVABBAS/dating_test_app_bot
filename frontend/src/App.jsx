@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { Compass, Flame, Heart, LayoutGrid, User, ArrowLeft } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Compass, Flame, Heart, LayoutGrid, User, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { getTelegramData, API_URL } from './telegram';
 
@@ -34,44 +34,50 @@ const primaryNav = [
   { path: '/more', label: 'بیشتر', icon: LayoutGrid },
 ];
 
-const secondary = ['/chat', '/premium', '/likes-you', '/store', '/top-picks', '/prompts', '/verification', '/gifts', '/settings', '/safety', '/filters', '/events', '/leaderboard', '/passport', '/notifications'];
+const rootPaths = new Set(primaryNav.map((item) => item.path));
 
 function TelegramChrome({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const root = primaryNav.some((item) => item.path === location.pathname);
-  const onboarding = location.pathname === '/onboarding';
-  const showBack = !root && !onboarding;
+  const isRoot = rootPaths.has(location.pathname);
+  const isOnboarding = location.pathname === '/onboarding';
+  const showBack = !isRoot && !isOnboarding;
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
-    if (!tg) return;
+    if (!tg) return undefined;
+
     try {
       tg.ready();
       tg.expand();
       tg.setHeaderColor('#0b0b0f');
       tg.setBackgroundColor('#0b0b0f');
-      if (showBack) {
-        tg.BackButton.show();
-        const goBack = () => navigate(-1);
-        tg.BackButton.onClick(goBack);
-        return () => tg.BackButton.offClick(goBack);
+
+      if (!showBack || !tg.BackButton) {
+        tg.BackButton?.hide();
+        return undefined;
       }
-      tg.BackButton.hide();
-    } catch {}
+
+      tg.BackButton.show();
+      const goBack = () => navigate(-1);
+      tg.BackButton.onClick(goBack);
+      return () => tg.BackButton.offClick(goBack);
+    } catch {
+      return undefined;
+    }
   }, [location.pathname, navigate, showBack]);
 
   return (
     <div className="app-shell">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-      {showBack && (
+      <div className="ambient ambient-one" aria-hidden="true" />
+      <div className="ambient ambient-two" aria-hidden="true" />
+      {showBack && !window.Telegram?.WebApp?.BackButton && (
         <button className="mobile-back" onClick={() => navigate(-1)} aria-label="بازگشت">
-          <ArrowLeft size={20} />
+          <ArrowRight size={20} />
         </button>
       )}
-      <main className={`page-container ${root ? 'page-root' : ''}`}>{children}</main>
-      {!onboarding && root && <BottomNav />}
+      <main className={`page-container ${isRoot ? 'page-root' : ''}`}>{children}</main>
+      {!isOnboarding && isRoot && <BottomNav />}
     </div>
   );
 }
@@ -79,13 +85,20 @@ function TelegramChrome({ children }) {
 function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+
   return (
     <nav className="bottom-nav" aria-label="ناوبری اصلی">
       <div className="bottom-nav-inner">
         {primaryNav.map(({ path, label, icon: Icon }) => {
           const active = location.pathname === path;
           return (
-            <button key={path} className={`nav-item ${active ? 'active' : ''}`} onClick={() => navigate(path)}>
+            <button
+              key={path}
+              type="button"
+              className={`nav-item ${active ? 'active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+              onClick={() => navigate(path)}
+            >
               <span className="nav-icon-wrap"><Icon size={21} strokeWidth={active ? 2.6 : 2} /></span>
               <span>{label}</span>
             </button>
@@ -98,12 +111,31 @@ function BottomNav() {
 
 function LoadingScreen() {
   return (
-    <div className="boot-screen">
-      <div className="brand-mark">♥</div>
+    <div className="boot-screen" role="status" aria-live="polite">
+      <div className="brand-mark" aria-hidden="true">♥</div>
       <div className="boot-copy"><strong>Vibe</strong><span>آدم مناسب، نه فقط یک پروفایل</span></div>
-      <div className="boot-loader"><i /><i /><i /></div>
+      <div className="boot-loader" aria-hidden="true"><i /><i /><i /></div>
     </div>
   );
+}
+
+function ErrorScreen({ message, onRetry }) {
+  return (
+    <div className="boot-screen error-state" role="alert">
+      <div className="brand-mark" aria-hidden="true">!</div>
+      <h2>Vibe در دسترس نیست</h2>
+      <p>{message}</p>
+      <button type="button" className="primary-btn" onClick={onRetry}>تلاش دوباره</button>
+    </div>
+  );
+}
+
+function ProfileGate({ user, children }) {
+  const location = useLocation();
+  if (!user) return null;
+  if (location.pathname === '/onboarding') return children;
+  if (user.age == null) return <Navigate to="/onboarding" replace />;
+  return children;
 }
 
 function AppContent() {
@@ -113,79 +145,86 @@ function AppContent() {
   const navigate = useNavigate();
   const initialized = useRef(false);
 
+  const boot = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      const tgData = getTelegramData();
+      if (!tgData?.user || !tgData?.initData) throw new Error('TELEGRAM_REQUIRED');
+
+      const { data } = await axios.post(`${API_URL}/user`, {
+        telegramId: tgData.user.id,
+        firstName: tgData.user.first_name || '',
+        lastName: tgData.user.last_name || '',
+        username: tgData.user.username || '',
+        initData: tgData.initData,
+      });
+
+      if (!data || typeof data !== 'object' || !data.telegramId) {
+        throw new Error('INVALID_USER_RESPONSE');
+      }
+
+      setUser(data);
+      if (data.age == null) navigate('/onboarding', { replace: true });
+    } catch (err) {
+      console.error('Mini App bootstrap failed', err);
+      setError(err.message === 'TELEGRAM_REQUIRED'
+        ? 'این مینی‌اپ باید از داخل تلگرام باز شود.'
+        : 'اتصال به سرویس برقرار نشد. دوباره تلاش کنید.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-
-    async function boot() {
-      try {
-        const tgData = getTelegramData();
-        if (!tgData?.user || !tgData?.initData) throw new Error('TELEGRAM_REQUIRED');
-
-        const { data } = await axios.post(`${API_URL}/user`, {
-          telegramId: tgData.user.id,
-          firstName: tgData.user.first_name || '',
-          lastName: tgData.user.last_name || '',
-          username: tgData.user.username || '',
-          initData: tgData.initData,
-        });
-
-        setUser(data);
-        if (data.age == null) navigate('/onboarding', { replace: true });
-      } catch (err) {
-        console.error('Mini App bootstrap failed', err);
-        setError(err.message === 'TELEGRAM_REQUIRED'
-          ? 'این مینی‌اپ باید از داخل تلگرام باز شود.'
-          : 'اتصال به سرویس برقرار نشد. دوباره تلاش کنید.');
-      } finally {
-        setLoading(false);
-      }
-    }
     boot();
-  }, [navigate]);
+  }, []);
 
-  const patchUser = (patch) => setUser((current) => ({ ...current, ...patch }));
+  const patchUser = (patch) => setUser((current) => ({ ...(current || {}), ...patch }));
   const logout = () => window.Telegram?.WebApp?.close?.();
 
   if (loading) return <LoadingScreen />;
-  if (error) return (
-    <div className="boot-screen error-state">
-      <div className="brand-mark">!</div>
-      <h2>Vibe در دسترس نیست</h2>
-      <p>{error}</p>
-      <button className="primary-btn" onClick={() => window.location.reload()}>تلاش دوباره</button>
-    </div>
-  );
+  if (error) return <ErrorScreen message={error} onRetry={boot} />;
+  if (!user) return <ErrorScreen message="اطلاعات کاربر دریافت نشد." onRetry={boot} />;
 
   return (
     <TelegramChrome>
-      <Routes>
-        <Route path="/" element={<Discover user={user} />} />
-        <Route path="/explore" element={<Explore user={user} />} />
-        <Route path="/matches" element={<Matches user={user} />} />
-        <Route path="/chat/:matchId" element={<Chat user={user} />} />
-        <Route path="/profile" element={<Profile user={user} onChange={patchUser} onLogout={logout} />} />
-        <Route path="/onboarding" element={<Onboarding user={user} onComplete={() => navigate('/')} />} />
-        <Route path="/more" element={<More user={user} />} />
-        <Route path="/premium" element={<Premium user={user} onChange={patchUser} />} />
-        <Route path="/likes-you" element={<LikesYou user={user} />} />
-        <Route path="/store" element={<Store user={user} onChange={patchUser} />} />
-        <Route path="/top-picks" element={<TopPicks user={user} />} />
-        <Route path="/prompts" element={<Prompts user={user} />} />
-        <Route path="/verification" element={<Verification user={user} onChange={patchUser} />} />
-        <Route path="/gifts" element={<Gifts user={user} />} />
-        <Route path="/settings" element={<Settings user={user} />} />
-        <Route path="/safety" element={<SafetyCenter user={user} />} />
-        <Route path="/filters" element={<Filters user={user} />} />
-        <Route path="/events" element={<Events user={user} />} />
-        <Route path="/leaderboard" element={<Leaderboard user={user} />} />
-        <Route path="/passport" element={<Passport user={user} onChange={patchUser} />} />
-        <Route path="/notifications" element={<Notifications user={user} />} />
-      </Routes>
+      <ProfileGate user={user}>
+        <Routes>
+          <Route path="/" element={<Discover user={user} />} />
+          <Route path="/explore" element={<Explore user={user} />} />
+          <Route path="/matches" element={<Matches user={user} />} />
+          <Route path="/chat/:matchId" element={<Chat user={user} />} />
+          <Route path="/profile" element={<Profile user={user} onChange={patchUser} onLogout={logout} />} />
+          <Route path="/onboarding" element={<Onboarding user={user} onComplete={() => navigate('/')} />} />
+          <Route path="/more" element={<More user={user} />} />
+          <Route path="/premium" element={<Premium user={user} onChange={patchUser} />} />
+          <Route path="/likes-you" element={<LikesYou user={user} />} />
+          <Route path="/store" element={<Store user={user} onChange={patchUser} />} />
+          <Route path="/top-picks" element={<TopPicks user={user} />} />
+          <Route path="/prompts" element={<Prompts user={user} />} />
+          <Route path="/verification" element={<Verification user={user} onChange={patchUser} />} />
+          <Route path="/gifts" element={<Gifts user={user} />} />
+          <Route path="/settings" element={<Settings user={user} />} />
+          <Route path="/safety" element={<SafetyCenter user={user} />} />
+          <Route path="/filters" element={<Filters user={user} />} />
+          <Route path="/events" element={<Events user={user} />} />
+          <Route path="/leaderboard" element={<Leaderboard user={user} />} />
+          <Route path="/passport" element={<Passport user={user} onChange={patchUser} />} />
+          <Route path="/notifications" element={<Notifications user={user} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ProfileGate>
     </TelegramChrome>
   );
 }
 
 export default function App() {
-  return <BrowserRouter><AppContent /></BrowserRouter>;
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
 }
