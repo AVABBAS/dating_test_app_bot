@@ -48,9 +48,8 @@ bot.api.getFile = async (fileId, ...args) => {
   return value;
 };
 
-// Use a completely new path on every app build. A versioned path is more robust
-// than a query-string cache buster against Telegram Android WebView caching.
-const MINI_APP_VERSION = "20260915-ec7a36ea";
+// Use a fresh path so Telegram WebView cannot reuse an older Mini App document.
+const MINI_APP_VERSION = "20260915-f10ad427";
 
 bot.command("start", (ctx) => {
   const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
