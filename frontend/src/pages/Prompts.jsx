@@ -97,7 +97,7 @@ const Prompts = ({ user }) => {
             <div className="pr-sheet-list">
               {available.map((q) => (
                 <button key={q} className="pr-sheet-item" onClick={() => addPrompt(q)}>
-                  <MessageSquareQuote size={15} color="var(--primary-color)" /> {q}
+                  <MessageSquareQuote size={15} color="var(--brand-primary)" /> {q}
                 </button>
               ))}
               {available.length === 0 && <p className="pr-hint" style={{ textAlign: 'center' }}>همه‌ی سؤال‌ها انتخاب شده‌اند.</p>}

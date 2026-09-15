@@ -44,7 +44,7 @@ const Leaderboard = ({ user }) => {
                   <div className="lb-pod-crown">{place === 1 && <Crown size={20} color="#FFB300" fill="#FFB300" />}</div>
                   <div className="lb-pod-avatar"><Avatar user={l.user} size={place === 1 ? 76 : 60} /></div>
                   <span className="lb-pod-name">{l.user.firstName || 'کاربر'}</span>
-                  <span className="lb-pod-likes"><Heart size={12} fill="var(--primary-color)" color="var(--primary-color)" /> {l.likes}</span>
+                  <span className="lb-pod-likes"><Heart size={12} fill="var(--brand-primary)" color="var(--brand-primary)" /> {l.likes}</span>
                   <div className="lb-pod-base">{MEDAL[place - 1]}</div>
                 </div>
               );
@@ -59,7 +59,7 @@ const Leaderboard = ({ user }) => {
                   <span className="lb-rank">{l.rank}</span>
                   <Avatar user={l.user} size={44} />
                   <span className="lb-name">{l.user.firstName || 'کاربر'}{l.user.age ? `، ${l.user.age}` : ''}</span>
-                  <span className="lb-likes"><Heart size={13} fill="var(--primary-color)" color="var(--primary-color)" /> {l.likes}</span>
+                  <span className="lb-likes"><Heart size={13} fill="var(--brand-primary)" color="var(--brand-primary)" /> {l.likes}</span>
                 </div>
               ))}
             </div>

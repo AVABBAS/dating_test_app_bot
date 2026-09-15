@@ -120,8 +120,8 @@ router.post(
 
       res.json({ ok: true, isPremium: true, tier, premiumUntil: until });
     } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "Server error" });
+      console.error("Premium subscription failed:", e);
+      res.status(500).json({ error: "Failed to activate premium. Please try again." });
     }
   }
 );
@@ -181,8 +181,8 @@ router.post(
 
       res.json({ ok: true, balances: finalBalances });
     } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: "Server error" });
+      console.error("Store purchase failed:", e);
+      res.status(500).json({ error: "Purchase failed. Please try again." });
     }
   }
 );

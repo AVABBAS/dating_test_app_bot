@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
-// Design system — order matters: tokens → reset → typography → components → sections
+// Design system — order matters: tokens → reset → typography → components → legacy shim
 import './styles/tokens.css'
 import './styles/reset.css'
 import './styles/typography.css'
@@ -13,6 +13,7 @@ import './styles/components/input.css'
 import './styles/components/modal.css'
 import './styles/components/toast.css'
 import './sections.css'
+import './styles/legacy-shim.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

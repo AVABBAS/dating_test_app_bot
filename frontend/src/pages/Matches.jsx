@@ -44,7 +44,7 @@ const Matches = ({ user }) => {
   if (loading) {
     return (
       <div className="matches-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Heart size={40} color="var(--primary-color)" style={{ animation: 'pulse 1s infinite alternate' }} />
+        <Heart size={40} color="var(--brand-primary)" style={{ animation: 'pulse 1s infinite alternate' }} />
       </div>
     );
   }
@@ -58,7 +58,7 @@ const Matches = ({ user }) => {
           به بخش Discover برو و پروفایل‌ها را بررسی کن!
         </p>
         <button
-          style={{ marginTop: 12, padding: '12px 28px', borderRadius: 24, background: 'var(--gradient-primary)', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+          style={{ marginTop: 12, padding: '12px 28px', borderRadius: 24, background: 'var(--gradient-brand)', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
           onClick={() => navigate('/')}
         >
           شروع سوایپ ❤️
@@ -91,7 +91,7 @@ const Matches = ({ user }) => {
                       onError={e => { e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'; }}
                     />
                     {other.isOnline && (
-                      <span style={{ position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#34C759', border: '2px solid var(--bg-color)' }} />
+                      <span style={{ position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#34C759', border: '2px solid var(--bg-base)' }} />
                     )}
                   </div>
                   <span className="match-name">{other.firstName || 'کاربر'}</span>
@@ -128,7 +128,7 @@ const Matches = ({ user }) => {
                     onError={e => { e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'; }}
                   />
                   {other.isOnline && (
-                    <span style={{ position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#34C759', border: '2px solid var(--bg-color)' }} />
+                    <span style={{ position: 'absolute', bottom: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#34C759', border: '2px solid var(--bg-base)' }} />
                   )}
                 </div>
                 <div className="message-content">

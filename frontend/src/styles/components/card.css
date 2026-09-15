@@ -1,52 +1,58 @@
 /* ═══════════════════════════════════════════════════════════
    Card Component
+   Midnight Romantic Minimalism — Image-First Design
 ═══════════════════════════════════════════════════════════ */
 
+/* Base Card — Surface with Subtle Shadow */
 .card {
   background: var(--bg-surface);
   border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-md);
 }
 
 .card-elevated {
   background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
 }
 
+/* Glass Card — For Floating Controls, Headers, Bottom Sheets Only */
 .card-glass {
   background: var(--bg-glass);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-subtle);
 }
 
-/* Discover Card */
+/* Discover Swipe Card — Premium Experience */
 .swipe-card {
   position: absolute;
-  width: 100%;
-  height: 96%;
-  border-radius: var(--radius-xl);
+  width: var(--card-width);
+  max-width: var(--card-max-width);
+  height: var(--card-height);
+  border-radius: var(--radius-2xl);
   background-color: var(--bg-surface);
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   will-change: transform;
   touch-action: none;
 }
 
+/* Next Card in Stack — Visible for Depth & Anticipation */
 .swipe-card-next {
-  transform: scale(0.95) translateY(-10px);
-  opacity: 0.7;
+  transform: scale(0.94) translateY(14px);
+  opacity: 0.75;
   z-index: -1;
 }
 
-/* Card Image */
+/* Card Image — Full Coverage, No Layout Shift */
 .card-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* Card Overlay Gradient */
+/* Card Overlay Gradient — Bottom Only for Text Readability */
 .card-gradient {
   position: absolute;
   bottom: 0;
@@ -57,14 +63,14 @@
   pointer-events: none;
 }
 
-/* Card Info Panel */
+/* Card Info Panel — Hierarchy via Typography & Opacity */
 .card-info {
   position: absolute;
-  bottom: var(--space-xl);
+  bottom: var(--space-2xl);
   left: var(--space-lg);
   right: var(--space-lg);
-  color: var(--text-1);
-  z-index: var(--z-surface);
+  color: var(--text-primary);
+  z-index: var(--z-modal);
 }
 
 .card-name-row {
@@ -75,13 +81,13 @@
 }
 
 .card-name {
-  font-size: var(--font-display-lg);
+  font-size: var(--font-size-2xl);
   font-weight: var(--weight-bold);
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .card-age {
-  font-size: var(--font-title-md);
+  font-size: var(--font-size-lg);
   font-weight: var(--weight-regular);
   opacity: 0.9;
 }
@@ -90,11 +96,11 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-md);
 }
 
 .card-bio {
-  font-size: var(--font-body-sm);
+  font-size: var(--font-size-base);
   line-height: var(--leading-relaxed);
   opacity: 0.88;
   display: -webkit-box;
@@ -103,7 +109,7 @@
   overflow: hidden;
 }
 
-/* Card Tags */
+/* Card Tags — Compact, Consistent, Subtle */
 .card-tags {
   display: flex;
   flex-wrap: wrap;
@@ -112,16 +118,16 @@
 }
 
 .card-tag {
-  background: var(--primary-soft);
-  border: 1px solid rgba(255, 45, 85, 0.4);
-  color: var(--text-1);
-  font-size: var(--font-caption);
+  background: var(--brand-primary-soft);
+  border: 1px solid rgba(255, 59, 107, 0.4);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
   padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   white-space: nowrap;
 }
 
-/* Photo Dots Indicator */
+/* Photo Dots Indicator — Subtle Navigation */
 .photo-dots {
   position: absolute;
   top: var(--space-lg);
@@ -145,7 +151,7 @@
   background: rgba(255, 255, 255, 0.95);
 }
 
-/* Explore Grid Card */
+/* Explore Grid Card — Editorial Layout */
 .explore-card {
   position: relative;
   aspect-ratio: 3 / 4;
@@ -166,13 +172,13 @@
   left: 0;
   right: 0;
   padding: var(--space-md);
-  background: linear-gradient(to top, rgba(13, 13, 15, 0.95) 0%, transparent 100%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, transparent 100%);
 }
 
 .explore-card-name {
-  font-size: var(--font-title-md);
+  font-size: var(--font-size-md);
   font-weight: var(--weight-medium);
-  color: var(--text-1);
+  color: var(--text-primary);
 }
 
 /* Small Card Variant */
@@ -181,7 +187,7 @@
   padding: var(--space-md);
 }
 
-/* Card with Border */
+/* Card with Border — Subtle Divider */
 .card-bordered {
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--border-subtle);
 }

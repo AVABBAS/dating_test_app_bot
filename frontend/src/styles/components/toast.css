@@ -1,10 +1,11 @@
 /* ═══════════════════════════════════════════════════════════
    Toast / Snackbar Component
+   Midnight Romantic Minimalism
 ═══════════════════════════════════════════════════════════ */
 
 .toast-container {
   position: fixed;
-  bottom: calc(var(--space-3xl) + var(--space-lg));
+  bottom: calc(var(--space-3xl) + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-toast);
@@ -19,14 +20,14 @@
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-md) var(--space-lg);
-  background: var(--bg-glass);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-full);
+  background: rgba(20, 20, 26, 0.95);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
   box-shadow: var(--shadow-lg);
   animation: toastSlideUp var(--transition-normal) ease forwards;
-  max-width: 280px;
+  max-width: 300px;
   pointer-events: auto;
 }
 
@@ -67,44 +68,48 @@
 
 .toast-message {
   flex: 1;
-  color: var(--text-1);
-  font-size: var(--font-body-sm);
+  color: var(--text-primary);
+  font-size: 14px;
   line-height: var(--leading-relaxed);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 220px;
+  max-width: 240px;
 }
 
 /* Toast Types */
 .toast-success {
-  border-color: rgba(48, 209, 88, 0.3);
+  border-color: rgba(50, 213, 131, 0.3);
+  background: rgba(20, 20, 26, 0.95);
 }
 
 .toast-success .toast-icon {
-  color: var(--success);
+  color: var(--color-success);
 }
 
 .toast-error {
-  border-color: rgba(255, 69, 58, 0.3);
+  border-color: rgba(255, 77, 103, 0.3);
+  background: rgba(20, 20, 26, 0.95);
 }
 
 .toast-error .toast-icon {
-  color: var(--danger);
+  color: var(--color-danger);
 }
 
 .toast-info {
-  border-color: var(--glass-border);
+  border-color: var(--border-medium);
+  background: rgba(20, 20, 26, 0.95);
 }
 
 .toast-info .toast-icon {
-  color: var(--text-2);
+  color: var(--text-secondary);
 }
 
 .toast-warning {
-  border-color: rgba(255, 214, 10, 0.3);
+  border-color: rgba(245, 196, 81, 0.3);
+  background: rgba(20, 20, 26, 0.95);
 }
 
 .toast-warning .toast-icon {
-  color: var(--warning);
+  color: var(--color-warning);
 }

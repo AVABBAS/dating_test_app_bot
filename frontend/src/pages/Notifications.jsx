@@ -4,8 +4,8 @@ import { PageHeader, Loading, EmptyState } from '../components/UI';
 import { Bell, Heart, Star, MessageCircle, Gift, CalendarDays, CheckCheck } from 'lucide-react';
 
 const TYPE_META = {
-  match:     { icon: Heart,         color: '#FF2A7A', bg: 'rgba(255,42,122,0.15)' },
-  like:      { icon: Heart,         color: '#FF6FA5', bg: 'rgba(255,42,122,0.12)' },
+  match:     { icon: Heart,         color: 'var(--brand-primary)', bg: 'var(--brand-primary-rgb,0.15)' },
+  like:      { icon: Heart,         color: 'var(--brand-primary-light)', bg: 'var(--brand-primary-rgb,0.12)' },
   superlike: { icon: Star,          color: '#00C6FF', bg: 'rgba(0,198,255,0.15)' },
   message:   { icon: MessageCircle, color: '#34C759', bg: 'rgba(52,199,89,0.15)' },
   gift:      { icon: Gift,          color: '#FFB300', bg: 'rgba(255,179,0,0.15)' },
@@ -53,7 +53,7 @@ const Notifications = ({ user }) => {
 
       {items.length === 0 ? (
         <EmptyState
-          icon={<Bell size={40} color="var(--primary-color)" />}
+          icon={<Bell size={40} color="var(--brand-primary)" />}
           title="اعلانی نداری"
           sub="وقتی اتفاق تازه‌ای بیفتد، اینجا می‌بینی."
         />

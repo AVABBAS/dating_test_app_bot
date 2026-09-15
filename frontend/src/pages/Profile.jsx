@@ -124,7 +124,7 @@ const Profile = ({ user, onChange, onLogout }) => {
   if (!profileData) {
     return (
       <div className="profile-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Heart size={40} color="var(--primary-color)" style={{ animation: 'pulse 1s infinite alternate' }} />
+        <Heart size={40} color="var(--brand-primary)" style={{ animation: 'pulse 1s infinite alternate' }} />
       </div>
     );
   }
@@ -349,8 +349,8 @@ const Profile = ({ user, onChange, onLogout }) => {
                 <ChevronLeft size={18} color="var(--text-secondary)" />
               </div>
               <div className="pf-settings-item" onClick={() => navigate('/prompts')}>
-                <div className="pf-settings-icon" style={{ background: 'rgba(255,42,122,0.15)' }}>
-                  <MessageSquareQuote size={18} color="var(--primary-color)" />
+                <div className="pf-settings-icon" style={{ background: 'var(--brand-primary-rgb,0.15)' }}>
+                  <MessageSquareQuote size={18} color="var(--brand-primary)" />
                 </div>
                 <div className="pf-settings-text">
                   <span>پرامپت‌های پروفایل</span>
@@ -432,10 +432,10 @@ const Profile = ({ user, onChange, onLogout }) => {
               </div>
               <div className="pf-settings-item" onClick={() => setShowDeleteConfirm(true)}>
                 <div className="pf-settings-icon" style={{ background: 'rgba(255,59,48,0.15)' }}>
-                  <Trash2 size={18} color="var(--danger)" />
+                  <Trash2 size={18} color="var(--color-danger)" />
                 </div>
                 <div className="pf-settings-text">
-                  <span style={{ color: 'var(--danger)' }}>حذف اکانت</span>
+                  <span style={{ color: 'var(--color-danger)' }}>حذف اکانت</span>
                   <span className="pf-settings-sub">این کار برگشت‌ناپذیر است</span>
                 </div>
                 <ChevronLeft size={18} color="var(--text-secondary)" />

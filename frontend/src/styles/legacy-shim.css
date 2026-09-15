@@ -1,0 +1,217 @@
+/* ══════════════════════════════════════════════════════════
+   legacy-shim.css — minimal styles for old lp-* classes
+   Temporary bridge until all pages migrate to new components
+   ══════════════════════════════════════════════════════════ */
+
+/* Page shell */
+.lp-page {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 16px 90px;
+  animation: fadeIn 0.25s ease;
+}
+.lp-page::-webkit-scrollbar { display: none; }
+
+/* Header */
+.lp-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -16px -16px 16px;
+  padding: 14px 16px;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.lp-back {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.lp-back:active { transform: scale(0.9); }
+.lp-header-titles { flex: 1; min-width: 0; }
+.lp-header-titles h2 {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+.lp-header-titles p {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 2px 0 0;
+}
+
+/* Cards */
+.lp-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+/* Buttons */
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.lp-btn-primary {
+  background: var(--gradient-brand);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+.lp-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.lp-btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-medium);
+}
+.lp-btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Section labels */
+.lp-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+
+/* Settings group */
+.st-group {
+  padding: 16px;
+}
+.st-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.st-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.st-row-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.st-row-text {
+  flex: 1;
+  min-width: 0;
+}
+.st-row-text span:first-child {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.st-row-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+/* Settings account chips */
+.st-account {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+.st-account-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.st-account-chip.active {
+  background: rgba(0, 198, 255, 0.12);
+  border-color: rgba(0, 198, 255, 0.3);
+  color: #00C6FF;
+}
+.st-account-chip.active:has(.lucide-crown) {
+  background: rgba(255, 179, 0, 0.12);
+  border-color: rgba(255, 179, 0, 0.3);
+  color: #FFB300;
+}
+
+/* Safety center */
+.sc-tools, .sc-reasons {
+  margin-top: 12px;
+}
+
+/* Events modal join button */
+.ev-modal-join {
+  width: 100%;
+  margin-top: 16px;
+}
+
+/* Filters save button */
+.fl-save {
+  width: 100%;
+  margin-top: 16px;
+}
+
+/* Prompts save button */
+.pr-save {
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* More page */
+.more-page {
+  padding-top: env(safe-area-inset-top, 16px);
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

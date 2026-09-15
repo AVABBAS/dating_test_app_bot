@@ -63,14 +63,14 @@ const Filters = ({ user }) => {
 
       {/* Looking for */}
       <div className="lp-card fl-block">
-        <div className="fl-label"><Users size={16} color="var(--primary-color)" /> به دنبال</div>
+        <div className="fl-label"><Users size={16} color="var(--brand-primary)" /> به دنبال</div>
         <Segmented options={LOOKING_FOR} value={prefs.lookingFor} onChange={(v) => patch({ lookingFor: v })} />
       </div>
 
       {/* Age range */}
       <div className="lp-card fl-block">
         <div className="fl-label">
-          <CalendarRange size={16} color="var(--secondary-color)" /> بازه سنی
+          <CalendarRange size={16} color="var(--brand-secondary)" /> بازه سنی
           <span className="fl-value">{prefs.prefAgeMin} تا {prefs.prefAgeMax} سال</span>
         </div>
         <div className="fl-range-row">
@@ -88,7 +88,7 @@ const Filters = ({ user }) => {
       {/* Distance */}
       <div className="lp-card fl-block">
         <div className="fl-label">
-          <MapPin size={16} color="var(--super-like)" /> حداکثر فاصله
+          <MapPin size={16} color="var(--color-info)" /> حداکثر فاصله
           <span className="fl-value">{prefs.maxDistance} کیلومتر</span>
         </div>
         <div className="fl-range-row">
