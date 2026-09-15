@@ -6,8 +6,6 @@ if (!token) throw new Error("BOT_TOKEN is unset");
 
 const bot = new Bot(token);
 
-// The API calls used by /api/user can happen on every Mini App launch.
-// Cache Telegram profile-photo lookups briefly to avoid repeated network calls.
 const PHOTO_CACHE_TTL_MS = 60 * 60 * 1000;
 const PHOTO_CACHE_MAX_ENTRIES = 5000;
 const photoCache = new Map();
@@ -35,7 +33,6 @@ bot.api.getUserProfilePhotos = async (userId, ...args) => {
   const cached = photoCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   if (cached) photoCache.delete(key);
-
   const value = await originalGetUserProfilePhotos(userId, ...args);
   setCache(photoCache, key, value);
   return value;
@@ -46,20 +43,18 @@ bot.api.getFile = async (fileId, ...args) => {
   const cached = fileCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   if (cached) fileCache.delete(key);
-
   const value = await originalGetFile(fileId, ...args);
   setCache(fileCache, key, value);
   return value;
 };
 
-// Cache-bust the Telegram WebView URL whenever the application build changes.
-// This is important because Telegram Android can retain the previous HTML/assets.
-const MINI_APP_VERSION = "20260915-4a0b7718";
+// Use a completely new path on every app build. A versioned path is more robust
+// than a query-string cache buster against Telegram Android WebView caching.
+const MINI_APP_VERSION = "20260915-ec7a36ea";
 
 bot.command("start", (ctx) => {
   const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  const separator = baseUrl.includes("?") ? "&" : "?";
-  const miniAppUrl = `${baseUrl}${separator}v=${MINI_APP_VERSION}`;
+  const miniAppUrl = `${baseUrl.replace(/\/$/, "")}/mini/${MINI_APP_VERSION}`;
   const keyboard = new InlineKeyboard().webApp(
     "Open Dating App ❤️",
     miniAppUrl
