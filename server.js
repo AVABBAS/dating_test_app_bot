@@ -20,12 +20,41 @@ const { mutateBalance } = require("./lib/ledger");
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
+const MINI_APP_VERSION = "20260915-4a0b7718";
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'frontend/dist')));
+// Never let the HTML shell or hashed assets become stale inside Telegram WebView.
+// Telegram Android has its own WebView/cache layer, so we deliberately disable
+// browser/proxy caching at the origin as well.
+app.use(express.static(path.join(__dirname, 'frontend/dist'), {
+  index: false,
+  etag: false,
+  lastModified: false,
+  maxAge: 0,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  },
+}));
 app.use(attachTelegramUser);
+
+// Always serve a fresh versioned HTML shell. The version query parameter is
+// preserved/accepted so a stale Telegram launch URL cannot keep the old shell.
+app.get('/', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(path.join(__dirname, 'frontend/dist/index.html'), {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
+  });
+});
 
 // --- SECURITY: Rate Limiting ---
 const limiter = rateLimit({
@@ -762,8 +791,16 @@ app.use("/api", require("./routes/profile"));       // Pack B
 app.use("/api", require("./routes/settings"));      // Pack C
 app.use("/api", require("./routes/social"));        // Pack D
 
+// Unknown API routes must stay JSON 404s; never return the SPA shell for /api/*.
+app.use("/api", (req, res) => {
+  res.status(404).json({ error: "API route not found" });
+});
+
 // ── Serve the React app for any non-API route (MUST be last) ──
 app.get("*", (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, "frontend/dist/index.html"));
 });
 
