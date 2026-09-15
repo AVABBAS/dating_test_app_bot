@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
-import { API_URL } from '../telegram';
+import { api } from '../api';
 import { X, Star, Heart as HeartIcon, RotateCcw, Info, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 import MatchModal from '../components/MatchModal';
 import Stories from '../components/Stories';
@@ -29,9 +28,9 @@ const Discover = ({ user }) => {
       setLoading(true);
       setError('');
       try {
-        const res = await axios.get(`${API_URL}/discover/${user.telegramId}`);
+        const data = await api.discover(user.telegramId);
         if (!cancelled) {
-          setProfiles(Array.isArray(res.data) ? res.data : []);
+          setProfiles(Array.isArray(data) ? data : []);
           setCurrentIndex(0);
         }
       } catch {
@@ -67,22 +66,17 @@ const Discover = ({ user }) => {
     actionTimer.current = window.setTimeout(async () => {
       const action = ({ right: 'like', left: 'pass', up: 'superlike' })[dir];
       try {
-        const res = await axios.post(`${API_URL}/action`, {
-          fromTelegramId: user.telegramId,
-          toUserId: profile.id,
-          action,
-        });
-        if (res.data?.match) {
+        const data = await api.action(user.telegramId, profile.id, action);
+        if (data?.match) {
           setMatchData({
             userPhoto: user.photoUrl || '',
             matchPhoto: profile.photoUrl,
             matchName: profile.firstName || profile.name || 'کاربر',
-            matchId: res.data.matchedUser?.id || res.data.matchId,
+            matchId: data.matchedUser?.id || data.matchId,
           });
         }
         setCurrentIndex(indexAtAction + 1);
       } catch {
-        // Do not silently lose a failed action: restore the card and let the user retry.
         setHistory(prev => prev.slice(0, -1));
         setExitDir(null);
       } finally {
