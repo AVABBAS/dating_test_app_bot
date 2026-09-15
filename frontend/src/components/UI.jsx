@@ -2,12 +2,23 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Check, X, BadgeCheck } from 'lucide-react';
 
-// ── Sticky page header with a back button ──
-export function PageHeader({ title, subtitle, right, onBack }) {
+// Safe back navigation: never eject the user from the Mini App when a page was opened directly.
+export function goBack(navigate, fallback = '/more') {
+  const idx = window.history.state?.idx;
+  if (typeof idx === 'number' && idx > 0) {
+    navigate(-1);
+    return;
+  }
+  navigate(fallback, { replace: true });
+}
+
+// Sticky page header with a deterministic fallback when there is no in-app history.
+export function PageHeader({ title, subtitle, right, onBack, fallback = '/more' }) {
   const navigate = useNavigate();
+  const handleBack = onBack || (() => goBack(navigate, fallback));
   return (
     <div className="lp-header glass-panel">
-      <button className="lp-back" onClick={onBack || (() => navigate(-1))} aria-label="بازگشت">
+      <button type="button" className="lp-back" onClick={handleBack} aria-label="بازگشت">
         <ChevronLeft size={22} />
       </button>
       <div className="lp-header-titles">
@@ -19,7 +30,6 @@ export function PageHeader({ title, subtitle, right, onBack }) {
   );
 }
 
-// ── Full-page centered spinner ──
 export function Loading({ label = 'در حال بارگذاری…' }) {
   return (
     <div className="lp-loading">
@@ -29,7 +39,6 @@ export function Loading({ label = 'در حال بارگذاری…' }) {
   );
 }
 
-// ── Empty state ──
 export function EmptyState({ icon, title, sub, action }) {
   return (
     <div className="lp-empty">
@@ -41,7 +50,6 @@ export function EmptyState({ icon, title, sub, action }) {
   );
 }
 
-// ── Toast hook ──
 export function useToast() {
   const [toast, setToast] = useState(null);
   const showToast = useCallback((msg, type = 'success') => {
@@ -59,7 +67,6 @@ export function useToast() {
 
 const FALLBACK = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop';
 
-// ── Avatar with online dot, verified & premium badges ──
 export function Avatar({ user, size = 56, showBadges = true, ring }) {
   const photo = user?.photoUrl || FALLBACK;
   return (
@@ -77,16 +84,11 @@ export function Avatar({ user, size = 56, showBadges = true, ring }) {
   );
 }
 
-// ── Simple pill/segmented control ──
 export function Segmented({ options, value, onChange }) {
   return (
     <div className="lp-segmented">
       {options.map((o) => (
-        <button
-          key={o.value}
-          className={`lp-seg ${value === o.value ? 'active' : ''}`}
-          onClick={() => onChange(o.value)}
-        >
+        <button type="button" key={o.value} className={`lp-seg ${value === o.value ? 'active' : ''}`} onClick={() => onChange(o.value)}>
           {o.icon && <span className="lp-seg-icon">{o.icon}</span>}
           {o.label}
         </button>
@@ -95,7 +97,6 @@ export function Segmented({ options, value, onChange }) {
   );
 }
 
-// ── iOS-style toggle ──
 export function Toggle({ on, onChange, disabled }) {
   return (
     <button
@@ -103,6 +104,7 @@ export function Toggle({ on, onChange, disabled }) {
       className={`lp-toggle ${on ? 'on' : ''} ${disabled ? 'disabled' : ''}`}
       onClick={() => !disabled && onChange(!on)}
       aria-pressed={on}
+      disabled={disabled}
     >
       <span className="lp-toggle-thumb" />
     </button>
