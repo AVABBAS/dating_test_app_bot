@@ -45,9 +45,34 @@ const Chat = ({ user }) => {
   }, [matchId, user?.telegramId]);
 
   useEffect(() => {
-    fetchMessages();
-    pollRef.current = setInterval(fetchMessages, 5000);
-    return () => clearInterval(pollRef.current);
+    let active = true;
+
+    const stopPolling = () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+
+    const startPolling = () => {
+      stopPolling();
+      if (!active || document.hidden) return;
+      fetchMessages();
+      pollRef.current = setInterval(fetchMessages, 5000);
+    };
+
+    startPolling();
+    const handleVisibility = () => {
+      if (document.hidden) stopPolling();
+      else startPolling();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      active = false;
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [fetchMessages]);
 
   useEffect(() => {
