@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import React, { Component, Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Compass, Flame, Heart, LayoutGrid, User, ArrowRight } from 'lucide-react';
 import axios from 'axios';
@@ -46,6 +46,17 @@ function safeBack(navigate, pathname) {
   const idx = window.history.state?.idx;
   if (typeof idx === 'number' && idx > 0) navigate(-1);
   else navigate(fallbackFor(pathname), { replace: true });
+}
+
+class RouteErrorBoundary extends Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error) { console.error('Vibe route rendering failed', error); }
+  handleRetry = () => { this.setState({ hasError: false }); window.location.reload(); };
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return <div className="boot-screen error-state" role="alert"><div className="brand-mark" aria-hidden="true">!</div><h2>این بخش موقتاً در دسترس نیست</h2><p>یک خطای غیرمنتظره رخ داد. دوباره تلاش کنید.</p><button type="button" className="primary-btn" onClick={this.handleRetry}>تلاش دوباره</button></div>;
+  }
 }
 
 function TelegramChrome({ children }) {
@@ -98,10 +109,10 @@ function AppContent() {
   const completeOnboarding = (updatedUser) => { patchUser(updatedUser); navigate('/', { replace: true }); };
   const logout = () => window.Telegram?.WebApp?.close?.();
   if (loading) return <LoadingScreen />; if (error) return <ErrorScreen message={error} onRetry={boot} />; if (!user) return <ErrorScreen message="اطلاعات کاربر دریافت نشد." onRetry={boot} />;
-  return <TelegramChrome><ProfileGate user={user}><Suspense fallback={<RouteLoading />}><Routes>
+  return <TelegramChrome><ProfileGate user={user}><RouteErrorBoundary><Suspense fallback={<RouteLoading />}><Routes>
     <Route path="/" element={<Discover user={user} />} /><Route path="/explore" element={<Explore user={user} />} /><Route path="/matches" element={<Matches user={user} />} /><Route path="/chat/:matchId" element={<Chat user={user} />} /><Route path="/profile" element={<Profile user={user} onChange={patchUser} onLogout={logout} />} />
     <Route path="/onboarding" element={<Onboarding user={user} onComplete={completeOnboarding} />} /><Route path="/more" element={<More user={user} />} /><Route path="/premium" element={<Premium user={user} onChange={patchUser} />} /><Route path="/likes-you" element={<LikesYou user={user} />} /><Route path="/store" element={<Store user={user} onChange={patchUser} />} /><Route path="/top-picks" element={<TopPicks user={user} />} />
     <Route path="/prompts" element={<Prompts user={user} />} /><Route path="/verification" element={<Verification user={user} onChange={patchUser} />} /><Route path="/gifts" element={<Gifts user={user} />} /><Route path="/settings" element={<Settings user={user} />} /><Route path="/safety" element={<SafetyCenter user={user} />} /><Route path="/filters" element={<Filters user={user} />} /><Route path="/events" element={<Events user={user} />} /><Route path="/leaderboard" element={<Leaderboard user={user} />} /><Route path="/passport" element={<Passport user={user} onChange={patchUser} />} /><Route path="/notifications" element={<Notifications user={user} />} /><Route path="*" element={<Navigate to="/" replace />} />
-  </Routes></Suspense></ProfileGate></TelegramChrome>;
+  </Routes></Suspense></RouteErrorBoundary></ProfileGate></TelegramChrome>;
 }
 export default function App() { return <BrowserRouter><AppContent /></BrowserRouter>; }
