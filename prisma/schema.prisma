@@ -14,52 +14,45 @@ model User {
   firstName   String?
   lastName    String?
   age         Int?
-  gender      String?  // 'male' or 'female'
-  lookingFor  String?  // 'male', 'female', or 'both'
+  gender      String?
+  lookingFor  String?
   bio         String?
   photoUrl    String?
-  interests   String[] // array of interest tags
-  photos      String[] // array of photo URLs
+  interests   String[]
+  photos      String[]
 
-  // ── Boost / engagement balances ──────────────────────────
   isBoosted      Boolean   @default(false)
   boostExpiry    DateTime?
   superLikesLeft Int       @default(3)
   boostsLeft     Int       @default(1)
   rosesLeft      Int       @default(5)
 
-  // ── Premium / subscription ───────────────────────────────
   isPremium    Boolean   @default(false)
-  premiumTier  String?   // 'gold' | 'platinum'
+  premiumTier  String?
   premiumUntil DateTime?
 
-  // ── Verification ─────────────────────────────────────────
   isVerified         Boolean @default(false)
-  verificationStatus String  @default("none") // none | pending | verified | rejected
+  verificationStatus String  @default("none")
 
-  // ── Privacy & notification preferences ───────────────────
   incognito      Boolean @default(false)
   notifyMatches  Boolean @default(true)
   notifyLikes    Boolean @default(true)
   notifyMessages Boolean @default(true)
 
-  // ── Location / passport ──────────────────────────────────
   latitude     Float?
   longitude    Float?
   city         String?
-  passportCity String? // when set, overrides real location for discovery
+  passportCity String?
 
-  // ── Discovery preferences ────────────────────────────────
   prefAgeMin  Int @default(18)
   prefAgeMax  Int @default(60)
-  maxDistance Int @default(100) // km
+  maxDistance Int @default(100)
 
   isOnline    Boolean  @default(false)
   lastSeen    DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // ── UI / accessibility preferences (legacy columns kept for DB compat) ────
   theme        String? @default("dark")
   language     String? @default("fa")
   fontSize     String? @default("medium")
@@ -70,13 +63,10 @@ model User {
 
   likesGiven    Like[] @relation("LikesGiven")
   likesReceived Like[] @relation("LikesReceived")
-
   matches1      Match[] @relation("MatchUser1")
   matches2      Match[] @relation("MatchUser2")
-
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
-
   prompts        ProfilePrompt[]
   stories        Story[]
   storyViews     StoryView[]     @relation("StoryViewer")
@@ -100,12 +90,10 @@ model Like {
   id         Int      @id @default(autoincrement())
   fromUserId Int
   toUserId   Int
-  action     String   // 'like', 'pass', or 'superlike'
+  action     String
   createdAt  DateTime @default(now())
-
   fromUser User @relation("LikesGiven", fields: [fromUserId], references: [id])
   toUser   User @relation("LikesReceived", fields: [toUserId], references: [id])
-
   @@unique([fromUserId, toUserId])
   @@index([toUserId, action])
   @@index([fromUserId])
@@ -116,11 +104,9 @@ model Match {
   user1Id   Int
   user2Id   Int
   createdAt DateTime @default(now())
-
   user1    User      @relation("MatchUser1", fields: [user1Id], references: [id])
   user2    User      @relation("MatchUser2", fields: [user2Id], references: [id])
   messages Message[]
-
   @@unique([user1Id, user2Id])
   @@index([user1Id])
   @@index([user2Id])
@@ -134,30 +120,25 @@ model Message {
   text      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-
   match    Match @relation(fields: [matchId], references: [id])
   sender   User  @relation("SentMessages", fields: [senderId], references: [id])
   receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id])
-
   @@index([matchId])
   @@index([matchId, createdAt])
+  @@index([senderId])
   @@index([receiverId, read])
 }
 
-// ── Hinge-style profile prompts ────────────────────────────
 model ProfilePrompt {
   id       Int    @id @default(autoincrement())
   userId   Int
   question String
   answer   String
   order    Int    @default(0)
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([userId])
 }
 
-// ── Ephemeral stories ──────────────────────────────────────
 model Story {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -166,10 +147,8 @@ model Story {
   viewCount Int      @default(0)
   createdAt DateTime @default(now())
   expiresAt DateTime
-
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   storyViews StoryView[]
-
   @@index([userId])
   @@index([expiresAt])
 }
@@ -179,45 +158,40 @@ model StoryView {
   storyId   Int
   viewerId  Int
   createdAt DateTime @default(now())
-
   story  Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
   viewer User  @relation("StoryViewer", fields: [viewerId], references: [id], onDelete: Cascade)
-
   @@unique([storyId, viewerId])
+  @@index([viewerId])
 }
 
-// ── Virtual gifts / roses ──────────────────────────────────
 model Gift {
   id         Int      @id @default(autoincrement())
   fromUserId Int
   toUserId   Int
-  type       String   // rose | heart | diamond | crown | teddy
+  type       String
   message    String?
   createdAt  DateTime @default(now())
-
   fromUser User @relation("GiftFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
   toUser   User @relation("GiftTo", fields: [toUserId], references: [id], onDelete: Cascade)
-
+  @@index([fromUserId])
   @@index([toUserId])
 }
 
-// ── Events / meetups ───────────────────────────────────────
 model Event {
   id          Int      @id @default(autoincrement())
   title       String
   description String?
   coverUrl    String?
-  category    String?  // party | coffee | sport | culture | travel
+  category    String?
   city        String?
   location    String?
   startsAt    DateTime
   hostId      Int?
   createdAt   DateTime @default(now())
-
   host      User?           @relation("EventHost", fields: [hostId], references: [id], onDelete: SetNull)
   attendees EventAttendee[]
-
   @@index([startsAt])
+  @@index([hostId])
 }
 
 model EventAttendee {
@@ -225,44 +199,37 @@ model EventAttendee {
   eventId   Int
   userId    Int
   createdAt DateTime @default(now())
-
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@unique([eventId, userId])
+  @@index([userId])
 }
 
-// ── Purchases (premium & consumable packs) ─────────────────
 model Purchase {
   id        Int      @id @default(autoincrement())
   userId    Int
-  item      String   // premium_gold | premium_platinum | boost_pack | superlike_pack | rose_pack
+  item      String
   quantity  Int      @default(1)
   amount    Float    @default(0)
   currency  String   @default("USD")
   createdAt DateTime @default(now())
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([userId])
 }
 
-// ── User reports (moderation) ──────────────────────────────
 model Report {
   id         Int      @id @default(autoincrement())
   fromUserId Int
   toUserId   Int
   reason     String
-  status     String   @default("open") // open | reviewed | actioned
+  status     String   @default("open")
   createdAt  DateTime @default(now())
-
   fromUser User @relation("ReportFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
   toUser User @relation("ReportTo", fields: [toUserId], references: [id], onDelete: Cascade)
-
+  @@index([fromUserId])
   @@index([toUserId])
 }
 
-// ── In-app notifications ───────────────────────────────────
 model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -272,13 +239,10 @@ model Notification {
   data      Json?
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([userId, read])
 }
 
-// ── Financial transaction ledger ───────────────────────────
 model LedgerEntry {
   id           Int      @id @default(autoincrement())
   userId       Int
@@ -288,9 +252,7 @@ model LedgerEntry {
   reason       String
   referenceId  String?
   createdAt    DateTime @default(now())
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([userId, currency])
   @@index([createdAt])
 }
