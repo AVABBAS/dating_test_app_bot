@@ -151,6 +151,7 @@ model Story {
   storyViews StoryView[]
   @@index([userId])
   @@index([expiresAt])
+  @@index([expiresAt, createdAt])
 }
 
 model StoryView {
@@ -240,19 +241,20 @@ model Notification {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
   @@index([userId, read])
 }
 
 model LedgerEntry {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  currency     String
-  amount       Int
-  balanceAfter Int
-  reason       String
-  referenceId  String?
-  createdAt    DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  currency      String
+  amount        Int
+  balanceAfter  Int
+  reason        String
+  referenceId   String?
+  createdAt     DateTime @default(now())
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([userId, currency])
-  @@index([createdAt])
+  @@index([userId, currency, createdAt])
+  @@index([referenceId])
 }
