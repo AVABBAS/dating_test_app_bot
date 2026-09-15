@@ -35,6 +35,37 @@ const primaryNav = [
 ];
 
 const rootPaths = new Set(primaryNav.map((item) => item.path));
+const FALLBACKS = {
+  '/chat': '/matches',
+  '/prompts': '/profile',
+  '/verification': '/profile',
+  '/premium': '/more',
+  '/likes-you': '/more',
+  '/store': '/more',
+  '/top-picks': '/more',
+  '/gifts': '/more',
+  '/settings': '/more',
+  '/safety': '/more',
+  '/filters': '/more',
+  '/events': '/more',
+  '/leaderboard': '/more',
+  '/passport': '/more',
+  '/notifications': '/more',
+};
+
+function fallbackFor(pathname) {
+  if (pathname.startsWith('/chat/')) return '/matches';
+  return FALLBACKS[pathname] || '/';
+}
+
+function safeBack(navigate, pathname) {
+  const idx = window.history.state?.idx;
+  if (typeof idx === 'number' && idx > 0) {
+    navigate(-1);
+  } else {
+    navigate(fallbackFor(pathname), { replace: true });
+  }
+}
 
 function TelegramChrome({ children }) {
   const location = useLocation();
@@ -59,7 +90,7 @@ function TelegramChrome({ children }) {
       }
 
       tg.BackButton.show();
-      const goBack = () => navigate(-1);
+      const goBack = () => safeBack(navigate, location.pathname);
       tg.BackButton.onClick(goBack);
       return () => tg.BackButton.offClick(goBack);
     } catch {
@@ -67,12 +98,14 @@ function TelegramChrome({ children }) {
     }
   }, [location.pathname, navigate, showBack]);
 
+  const showBrowserBack = showBack && !window.Telegram?.WebApp?.BackButton;
+
   return (
     <div className="app-shell">
       <div className="ambient ambient-one" aria-hidden="true" />
       <div className="ambient ambient-two" aria-hidden="true" />
-      {showBack && !window.Telegram?.WebApp?.BackButton && (
-        <button className="mobile-back" onClick={() => navigate(-1)} aria-label="بازگشت">
+      {showBrowserBack && (
+        <button type="button" className="mobile-back" onClick={() => safeBack(navigate, location.pathname)} aria-label="بازگشت">
           <ArrowRight size={20} />
         </button>
       )}
@@ -92,13 +125,7 @@ function BottomNav() {
         {primaryNav.map(({ path, label, icon: Icon }) => {
           const active = location.pathname === path;
           return (
-            <button
-              key={path}
-              type="button"
-              className={`nav-item ${active ? 'active' : ''}`}
-              aria-current={active ? 'page' : undefined}
-              onClick={() => navigate(path)}
-            >
+            <button type="button" key={path} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => navigate(path)}>
               <span className="nav-icon-wrap"><Icon size={21} strokeWidth={active ? 2.6 : 2} /></span>
               <span>{label}</span>
             </button>
@@ -160,17 +187,12 @@ function AppContent() {
         initData: tgData.initData,
       });
 
-      if (!data || typeof data !== 'object' || !data.telegramId) {
-        throw new Error('INVALID_USER_RESPONSE');
-      }
-
+      if (!data || typeof data !== 'object' || !data.telegramId) throw new Error('INVALID_USER_RESPONSE');
       setUser(data);
       if (data.age == null) navigate('/onboarding', { replace: true });
     } catch (err) {
       console.error('Mini App bootstrap failed', err);
-      setError(err.message === 'TELEGRAM_REQUIRED'
-        ? 'این مینی‌اپ باید از داخل تلگرام باز شود.'
-        : 'اتصال به سرویس برقرار نشد. دوباره تلاش کنید.');
+      setError(err.message === 'TELEGRAM_REQUIRED' ? 'این مینی‌اپ باید از داخل تلگرام باز شود.' : 'اتصال به سرویس برقرار نشد. دوباره تلاش کنید.');
     } finally {
       setLoading(false);
     }
@@ -222,9 +244,5 @@ function AppContent() {
 }
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
-  );
+  return <BrowserRouter><AppContent /></BrowserRouter>;
 }
