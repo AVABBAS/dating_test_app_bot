@@ -4,6 +4,44 @@
          that break chat text selection and accessibility
 ═══════════════════════════════════════════════════════════ */
 
+/* Temporary compatibility aliases.
+   New code should use the canonical tokens in tokens.css directly.
+   These aliases let the existing component/legacy CSS migrate safely
+   without introducing invisible/undefined CSS values. */
+:root {
+  --bg: var(--bg-base);
+  --surface: var(--bg-surface);
+  --surface-1: var(--bg-surface);
+  --surface-2: var(--bg-elevated);
+  --surface-3: var(--bg-emphasized);
+  --text: var(--text-primary);
+  --text-1: var(--text-primary);
+  --text-2: var(--text-secondary);
+  --text-3: var(--text-tertiary);
+  --text-4: var(--text-muted);
+  --muted: var(--text-secondary);
+  --faint: var(--text-muted);
+  --primary: var(--brand-primary);
+  --primary-soft: var(--brand-primary-soft);
+  --accent: var(--brand-primary);
+  --accent-2: var(--brand-secondary);
+  --accent-bg: var(--brand-primary-soft);
+  --accent-border: var(--border-active);
+  --border: var(--border-subtle);
+  --shadow: var(--shadow-md);
+  --radius: var(--radius-xl);
+  --radius-full: var(--radius-pill);
+  --z-overlay: var(--z-modal-backdrop);
+
+  --font-display-xl: var(--font-size-display);
+  --font-display-lg: var(--font-size-2xl);
+  --font-title-md: var(--font-size-lg);
+  --font-title-sm: var(--font-size-md);
+  --font-body-lg: var(--font-size-base);
+  --font-body-sm: var(--font-size-sm);
+  --font-caption: var(--font-size-xs);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -18,7 +56,7 @@ html, body {
 
 body {
   background-color: var(--bg-base);
-  color: var(--text-1);
+  color: var(--text-primary);
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -41,19 +79,19 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--text-4);
-  border-radius: var(--radius-full);
+  background: var(--text-muted);
+  border-radius: var(--radius-pill);
 }
 
 /* Selection */
 ::selection {
-  background: var(--primary-soft);
-  color: var(--text-1);
+  background: var(--brand-primary-soft);
+  color: var(--text-primary);
 }
 
 /* Focus Outline */
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
