@@ -62,6 +62,19 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      - name: Normalize migration SQL for CI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          bom = b"\xef\xbb\xbf"
+          for path in Path("prisma/migrations").glob("*/migration.sql"):
+              data = path.read_bytes()
+              if data.startswith(bom):
+                  path.write_bytes(data[len(bom):])
+                  print(f"Removed UTF-8 BOM from {path}")
+          PY
+
       - name: Apply Prisma migrations
         run: npx prisma migrate deploy
 
