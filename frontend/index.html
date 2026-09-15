@@ -4,13 +4,50 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Dating App</title>
+    <style>
+      html, body, #root { margin: 0; min-height: 100%; width: 100%; background: #09090d; }
+      .boot-fallback { min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; color: #fff; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-align: center; }
+      .boot-fallback-card { max-width: 420px; }
+      .boot-fallback-title { font-size: 24px; font-weight: 800; margin: 0 0 10px; }
+      .boot-fallback-text { color: #a1a1aa; line-height: 1.7; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .boot-fallback-error { margin-top: 16px; color: #fca5a5; font-size: 12px; direction: ltr; }
+    </style>
+    <script>
+      (function () {
+        function escapeHtml(value) {
+          return String(value).replace(/[&<>"']/g, function (c) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+          });
+        }
+        function showBootError(message) {
+          var root = document.getElementById('root');
+          if (!root) return;
+          root.innerHTML = '<div class="boot-fallback"><div class="boot-fallback-card"><h1 class="boot-fallback-title">Vibe</h1><p class="boot-fallback-text">برنامه نتوانست اجرا شود. لطفاً دوباره تلاش کنید.</p><p class="boot-fallback-error">' + escapeHtml(message || 'Unknown startup error') + '</p></div></div>';
+        }
+        window.__showMiniAppBootError = showBootError;
+        window.addEventListener('error', function (event) {
+          if (event && event.message) showBootError(event.message);
+        }, true);
+        window.addEventListener('unhandledrejection', function (event) {
+          var reason = event && event.reason;
+          showBootError(reason && (reason.stack || reason.message) || reason || 'Unhandled promise rejection');
+        });
+      })();
+    </script>
     <!-- Telegram WebApp Script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- Vazirmatn Font -->
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-fallback" aria-live="polite">
+        <div class="boot-fallback-card">
+          <h1 class="boot-fallback-title">Vibe</h1>
+          <p class="boot-fallback-text">در حال راه‌اندازی برنامه…</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
