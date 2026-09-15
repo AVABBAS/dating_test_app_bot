@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { api, API_URL } from '../api';
+import { api } from '../api';
 import { PageHeader, Loading, EmptyState, useToast, FALLBACK } from '../components/UI';
 import { getTelegramData } from '../telegram';
 import { Heart, Lock, Crown, Star, Sparkles } from 'lucide-react';
@@ -26,14 +25,10 @@ const LikesYou = ({ user }) => {
 
   const likeBack = (u) => {
     setActing(u.id);
-    axios.post(`${API_URL}/action`, {
-      fromTelegramId: user.telegramId,
-      toUserId: u.id,
-      action: 'like',
-    })
+    api.action(user.telegramId, u.id, 'like')
       .then((r) => {
         tg.hapticNotification('success');
-        if (r.data?.match) showToast(`با ${u.firstName} مچ شدید! 💞`);
+        if (r?.match) showToast(`با ${u.firstName} مچ شدید! 💞`);
         else showToast('پسند ثبت شد');
         setData((d) => ({ ...d, users: d.users.filter((x) => x.id !== u.id), count: Math.max(0, d.count - 1) }));
       })
@@ -52,7 +47,7 @@ const LikesYou = ({ user }) => {
       {ToastEl}
 
       {!premium && users.length > 0 && (
-        <button className="ly-upsell" onClick={() => navigate('/premium')}>
+        <button type="button" className="ly-upsell" onClick={() => navigate('/premium')}>
           <Crown size={22} color="#fff" fill="#FFD700" />
           <div className="ly-upsell-text">
             <b>ببین چه کسانی تو را پسندیده‌اند</b>
@@ -66,7 +61,7 @@ const LikesYou = ({ user }) => {
           icon={<Heart size={30} />}
           title="هنوز کسی نمانده"
           sub="به سوایپ ادامه بده تا افراد جدید تو را پیدا کنند."
-          action={<button className="lp-btn lp-btn-ghost" style={{ maxWidth: 220 }} onClick={() => navigate('/')}>رفتن به کشف</button>}
+          action={<button type="button" className="lp-btn lp-btn-ghost" style={{ maxWidth: 220 }} onClick={() => navigate('/')}>رفتن به کشف</button>}
         />
       ) : (
         <div className="ly-grid">
@@ -89,11 +84,7 @@ const LikesYou = ({ user }) => {
                     </span>
                     {u.city && <span className="ly-city">{u.city}</span>}
                   </div>
-                  <button
-                    className="ly-like-btn"
-                    disabled={acting === u.id}
-                    onClick={() => likeBack(u)}
-                  >
+                  <button type="button" className="ly-like-btn" disabled={acting === u.id} onClick={() => likeBack(u)}>
                     <Heart size={18} fill="#fff" />
                   </button>
                 </>
