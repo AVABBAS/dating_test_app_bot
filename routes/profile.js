@@ -7,6 +7,7 @@ const prisma = require("../lib/prisma");
 const { authorizeTelegramId } = require("../lib/telegramAuth");
 const { withComputedOnline, publicUserSelect } = require("../lib/helpers");
 const { notify } = require("../lib/notify");
+const { mutateBalance } = require("../lib/ledger");
 
 const router = express.Router();
 
@@ -282,14 +283,25 @@ router.post(
       if (from.id === toUserId) return res.status(400).json({ error: "Cannot gift yourself" });
 
       // A rose costs one from the balance; other gifts are free demo tokens
-      if (type === "rose") {
-        if (from.rosesLeft <= 0) return res.status(402).json({ error: "No roses left", needRoses: true });
-        await prisma.user.update({ where: { id: from.id }, data: { rosesLeft: { decrement: 1 } } });
-      }
+      let gift;
+      let newRosesLeft = from.rosesLeft;
 
-      const gift = await prisma.gift.create({
-        data: { fromUserId: from.id, toUserId, type, message: message || null },
-      });
+      await prisma.$transaction(async (tx) => {
+        if (type === "rose") {
+          const res = await mutateBalance(tx, {
+            userId: from.id,
+            currency: "rose",
+            amount: -1,
+            reason: "send_rose",
+            referenceId: String(toUserId),
+          });
+          newRosesLeft = res.balanceAfter;
+        }
+
+        gift = await tx.gift.create({
+          data: { fromUserId: from.id, toUserId, type, message: message || null },
+        });
+      }, { maxWait: 15000, timeout: 15000 });
 
       const to = await prisma.user.findUnique({ where: { id: toUserId } });
       await notify(to, {
@@ -300,8 +312,11 @@ router.post(
         telegramText: `🎁 ${from.firstName || "کسی"} برایت یک ${type === "rose" ? "رز 🌹" : "هدیه"} فرستاد!`,
       });
 
-      res.json({ ok: true, gift, rosesLeft: type === "rose" ? from.rosesLeft - 1 : from.rosesLeft });
+      res.json({ ok: true, gift, rosesLeft: newRosesLeft });
     } catch (e) {
+      if (e.code === "INSUFFICIENT_FUNDS" || e.status === 402) {
+        return res.status(402).json({ error: "No roses left", needRoses: true });
+      }
       console.error(e);
       res.status(500).json({ error: "Server error" });
     }

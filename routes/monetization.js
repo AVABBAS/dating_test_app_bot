@@ -11,6 +11,7 @@ const {
   isPremiumActive,
   publicUserSelect,
 } = require("../lib/helpers");
+const { mutateBalance } = require("../lib/ledger");
 
 const router = express.Router();
 
@@ -84,15 +85,39 @@ router.post(
 
     try {
       const until = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // +30 days
-      const bonus = tier === "platinum" ? { superLikesLeft: { increment: 5 }, rosesLeft: { increment: 5 } } : { superLikesLeft: { increment: 5 } };
+      const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
+      if (!user) return res.status(404).json({ error: "User not found" });
 
-      const user = await prisma.user.update({
-        where: { telegramId: telegramId.toString() },
-        data: { isPremium: true, premiumTier: tier, premiumUntil: until, ...bonus },
+      await prisma.$transaction(async (tx) => {
+        const purchase = await tx.purchase.create({
+          data: { userId: user.id, item: `premium_${tier}`, amount: plan.priceMonthly },
+        });
+
+        await tx.user.update({
+          where: { id: user.id },
+          data: { isPremium: true, premiumTier: tier, premiumUntil: until },
+        });
+
+        // Grant perks atomically with ledger
+        await mutateBalance(tx, {
+          userId: user.id,
+          currency: "superlike",
+          amount: 5,
+          reason: "purchase",
+          referenceId: `purchase_${purchase.id}`,
+        });
+
+        if (tier === "platinum") {
+          await mutateBalance(tx, {
+            userId: user.id,
+            currency: "rose",
+            amount: 5,
+            reason: "purchase",
+            referenceId: `purchase_${purchase.id}`,
+          });
+        }
       });
-      await prisma.purchase.create({
-        data: { userId: user.id, item: `premium_${tier}`, amount: plan.priceMonthly },
-      });
+
       res.json({ ok: true, isPremium: true, tier, premiumUntil: until });
     } catch (e) {
       console.error(e);
@@ -126,14 +151,35 @@ router.post(
     if (!def) return res.status(400).json({ error: "Invalid item" });
 
     try {
-      const data = {};
-      for (const [k, v] of Object.entries(def.grants)) data[k] = { increment: v };
-      const user = await prisma.user.update({
-        where: { telegramId: telegramId.toString() },
-        data,
+      const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      let finalBalances;
+
+      await prisma.$transaction(async (tx) => {
+        const purchase = await tx.purchase.create({
+          data: { userId: user.id, item, amount: def.price },
+        });
+
+        for (const [k, v] of Object.entries(def.grants)) {
+          const currency = k === "boostsLeft" ? "boost" : k === "superLikesLeft" ? "superlike" : "rose";
+          await mutateBalance(tx, {
+            userId: user.id,
+            currency,
+            amount: v,
+            reason: "purchase",
+            referenceId: `purchase_${purchase.id}`,
+          });
+        }
+
+        const fresh = await tx.user.findUnique({
+          where: { id: user.id },
+          select: { superLikesLeft: true, boostsLeft: true, rosesLeft: true },
+        });
+        finalBalances = fresh;
       });
-      await prisma.purchase.create({ data: { userId: user.id, item, amount: def.price } });
-      res.json({ ok: true, balances: { superLikesLeft: user.superLikesLeft, boostsLeft: user.boostsLeft, rosesLeft: user.rosesLeft } });
+
+      res.json({ ok: true, balances: finalBalances });
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: "Server error" });

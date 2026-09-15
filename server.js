@@ -15,6 +15,7 @@ const {
 } = require("./lib/helpers");
 const { attachTelegramUser, authorizeTelegramId } = require("./lib/telegramAuth");
 const { notify } = require("./lib/notify");
+const { mutateBalance } = require("./lib/ledger");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +25,7 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
+app.use(attachTelegramUser);
 
 // --- SECURITY: Rate Limiting ---
 const limiter = rateLimit({
@@ -153,7 +155,10 @@ app.put(
 
 // 3. Get Discovery Profiles — respects gender + age + distance preferences,
 //    hides incognito users, and reports a freshly-computed online status.
-app.get("/api/discover/:telegramId", async (req, res) => {
+app.get(
+  "/api/discover/:telegramId",
+  authorizeTelegramId((req) => req.params.telegramId),
+  async (req, res) => {
   const { telegramId } = req.params;
 
   try {
@@ -202,98 +207,123 @@ app.post(
       const fromUser = await prisma.user.findUnique({ where: { telegramId: fromTelegramId.toString() } });
       if (!fromUser) return res.status(404).json({ error: "User not found" });
 
-      // Enforce super-like balance (only charge for a *new* super like)
-      const existing = await prisma.like.findUnique({
-        where: { fromUserId_toUserId: { fromUserId: fromUser.id, toUserId } },
-      });
-      const chargeSuperlike = action === "superlike" && (!existing || existing.action !== "superlike");
-      if (chargeSuperlike && (fromUser.superLikesLeft ?? 0) <= 0) {
-        return res.status(402).json({ error: "No super likes left", needSuperlikes: true });
+      // INT-LIKE-02: Business rule & DB constraint check
+      if (fromUser.id === toUserId) {
+        return res.status(400).json({ error: "Cannot like or interact with yourself" });
       }
 
-      await prisma.like.upsert({
-        where: { fromUserId_toUserId: { fromUserId: fromUser.id, toUserId } },
-        update: { action },
-        create: { fromUserId: fromUser.id, toUserId, action },
-      });
+      const toUser = await prisma.user.findUnique({ where: { id: toUserId } });
+      if (!toUser) return res.status(404).json({ error: "Target profile not found" });
 
-      if (chargeSuperlike) {
-        await prisma.user.update({ where: { id: fromUser.id }, data: { superLikesLeft: { decrement: 1 } } });
-      }
+      let matchCreated = false;
+      let existingMatchId = null;
+      let isNewAction = false;
 
-      // Check for a match (like and superlike both count)
-      if (action === "like" || action === "superlike") {
-        const mutualLike = await prisma.like.findUnique({
-          where: { fromUserId_toUserId: { fromUserId: toUserId, toUserId: fromUser.id } },
+      // INT-MATCH-01 & FIN-WALLET-01: Atomic transaction for like + superlike balance + canonical match creation
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.like.findUnique({
+          where: { fromUserId_toUserId: { fromUserId: fromUser.id, toUserId } },
+        });
+        const chargeSuperlike = action === "superlike" && (!existing || existing.action !== "superlike");
+
+        if (chargeSuperlike) {
+          // Atomic balance deduction and ledger recording
+          await mutateBalance(tx, {
+            userId: fromUser.id,
+            currency: "superlike",
+            amount: -1,
+            reason: "swipe_superlike",
+            referenceId: String(toUserId),
+          });
+        }
+
+        await tx.like.upsert({
+          where: { fromUserId_toUserId: { fromUserId: fromUser.id, toUserId } },
+          update: { action },
+          create: { fromUserId: fromUser.id, toUserId, action },
         });
 
-        if (mutualLike && (mutualLike.action === "like" || mutualLike.action === "superlike")) {
-          let existingMatch = await prisma.match.findFirst({
-            where: {
-              OR: [
-                { user1Id: fromUser.id, user2Id: toUserId },
-                { user1Id: toUserId, user2Id: fromUser.id },
-              ],
-            },
-          });
-          if (!existingMatch) {
-            existingMatch = await prisma.match.create({ data: { user1Id: fromUser.id, user2Id: toUserId } });
-          }
-
-          const toUser = await prisma.user.findUnique({ where: { id: toUserId } });
-
-          // Notify both sides (persists + Telegram, honoring prefs)
-          await notify(toUser, {
-            type: "match",
-            title: "یک مچ جدید! 🎉",
-            body: `تو و ${fromUser.firstName || "کسی"} همدیگر را پسندیدید.`,
-            data: { matchId: existingMatch.id, userId: fromUser.id },
-            telegramText: `🎉 با ${fromUser.firstName || fromUser.username || "یک نفر"} مچ شدی! برای شروع گفتگو وارد اپ شو.`,
-          });
-          await notify(fromUser, {
-            type: "match",
-            title: "یک مچ جدید! 🎉",
-            body: `تو و ${toUser.firstName || "کسی"} همدیگر را پسندیدید.`,
-            data: { matchId: existingMatch.id, userId: toUser.id },
-            telegramText: `🎉 با ${toUser.firstName || toUser.username || "یک نفر"} مچ شدی! برای شروع گفتگو وارد اپ شو.`,
-          });
-
-          return res.json({
-            match: true,
-            matchId: existingMatch.id,
-            matchedUser: { id: toUser.id, firstName: toUser.firstName, photoUrl: toUser.photoUrl },
-          });
+        if (!existing) {
+          isNewAction = true;
         }
+
+        // Check for a mutual match
+        if (action === "like" || action === "superlike") {
+          const mutualLike = await tx.like.findUnique({
+            where: { fromUserId_toUserId: { fromUserId: toUserId, toUserId: fromUser.id } },
+          });
+
+          if (mutualLike && (mutualLike.action === "like" || mutualLike.action === "superlike")) {
+            // DB-CONSTRAINT-01: Canonical ordering (u1 < u2) eliminates duplicate inverted matches
+            const u1 = Math.min(fromUser.id, toUserId);
+            const u2 = Math.max(fromUser.id, toUserId);
+
+            const matchRecord = await tx.match.upsert({
+              where: { user1Id_user2Id: { user1Id: u1, user2Id: u2 } },
+              update: {},
+              create: { user1Id: u1, user2Id: u2 },
+            });
+
+            matchCreated = true;
+            existingMatchId = matchRecord.id;
+          }
+        }
+      }, { maxWait: 15000, timeout: 15000 });
+
+      // Post-transaction notifications
+      if (matchCreated) {
+        await notify(toUser, {
+          type: "match",
+          title: "یک مچ جدید! 🎉",
+          body: `تو و ${fromUser.firstName || "کسی"} همدیگر را پسندیدید.`,
+          data: { matchId: existingMatchId, userId: fromUser.id },
+          telegramText: `🎉 با ${fromUser.firstName || fromUser.username || "یک نفر"} مچ شدی! برای شروع گفتگو وارد اپ شو.`,
+        });
+        await notify(fromUser, {
+          type: "match",
+          title: "یک مچ جدید! 🎉",
+          body: `تو و ${toUser.firstName || "کسی"} همدیگر را پسندیدید.`,
+          data: { matchId: existingMatchId, userId: toUser.id },
+          telegramText: `🎉 با ${toUser.firstName || toUser.username || "یک نفر"} مچ شدی! برای شروع گفتگو وارد اپ شو.`,
+        });
+
+        return res.json({
+          match: true,
+          matchId: existingMatchId,
+          matchedUser: { id: toUser.id, firstName: toUser.firstName, photoUrl: toUser.photoUrl },
+        });
       }
 
-      // No match yet: let the recipient know someone liked / super-liked them.
-      // Only notify if this is a *new* action (not changing an existing one).
-      if ((action === "like" || action === "superlike") && !existing) {
-        const toUser = await prisma.user.findUnique({ where: { id: toUserId } });
-        if (toUser) {
-          await notify(toUser, {
-            type: action === "superlike" ? "superlike" : "like",
-            title: action === "superlike" ? "یک سوپرلایک گرفتی! ⭐" : "یک نفر تو را پسندید 💗",
-            body: action === "superlike" ? "یک نفر برایت سوپرلایک فرستاد." : "برای دیدن اینکه چه کسی، وارد اپ شو.",
-            data: { userId: fromUser.id },
-            telegramText:
-              action === "superlike"
-                ? "⭐ یک نفر به تو سوپرلایک داد! وارد اپ شو تا ببینی کیه."
-                : "💗 یک نفر تو را پسندید! وارد اپ شو.",
-          });
-        }
+      // No match yet: notify recipient if this is a new like/superlike
+      if ((action === "like" || action === "superlike") && isNewAction) {
+        await notify(toUser, {
+          type: action === "superlike" ? "superlike" : "like",
+          title: action === "superlike" ? "یک سوپرلایک گرفتی! ⭐" : "یک نفر تو را پسندید 💗",
+          body: action === "superlike" ? "یک نفر برایت سوپرلایک فرستاد." : "برای دیدن اینکه چه کسی، وارد اپ شو.",
+          data: { userId: fromUser.id },
+          telegramText:
+            action === "superlike"
+              ? "⭐ یک نفر به تو سوپرلایک داد! وارد اپ شو تا ببینی کیه."
+              : "💗 یک نفر تو را پسندید! وارد اپ شو.",
+        });
       }
 
       res.json({ match: false });
     } catch (error) {
-      console.error(error);
+      if (error.code === "INSUFFICIENT_FUNDS" || error.status === 402) {
+        return res.status(402).json({ error: "No super likes left", needSuperlikes: true });
+      }
+      console.error("Action error:", error);
       res.status(500).json({ error: "Server error" });
     }
   }
 );
 
 // 5. Get Matches (with last message)
-app.get("/api/matches/:telegramId", async (req, res) => {
+app.get(
+  "/api/matches/:telegramId",
+  authorizeTelegramId((req) => req.params.telegramId),
+  async (req, res) => {
   const { telegramId } = req.params;
   try {
     const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
@@ -434,23 +464,32 @@ app.post(
       const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
       if (!user) return res.status(404).json({ error: "User not found" });
 
-      if (!isBoostActive(user) && (user.boostsLeft ?? 0) <= 0) {
+      const boostExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+      let finalBoostsLeft = user.boostsLeft;
+
+      await prisma.$transaction(async (tx) => {
+        if (!isBoostActive(user)) {
+          const res = await mutateBalance(tx, {
+            userId: user.id,
+            currency: "boost",
+            amount: -1,
+            reason: "profile_boost",
+          });
+          finalBoostsLeft = res.balanceAfter;
+        }
+
+        await tx.user.update({
+          where: { id: user.id },
+          data: { isBoosted: true, boostExpiry },
+        });
+      }, { maxWait: 15000, timeout: 15000 });
+
+      res.json({ boosted: true, expiresAt: boostExpiry, boostsLeft: finalBoostsLeft });
+    } catch (error) {
+      if (error.code === "INSUFFICIENT_FUNDS" || error.status === 402) {
         return res.status(402).json({ error: "No boosts left", needBoosts: true });
       }
-
-      const boostExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-      const updated = await prisma.user.update({
-        where: { telegramId: telegramId.toString() },
-        data: {
-          isBoosted: true,
-          boostExpiry,
-          ...(isBoostActive(user) ? {} : { boostsLeft: { decrement: 1 } }),
-        },
-      });
-
-      res.json({ boosted: true, expiresAt: boostExpiry, boostsLeft: updated.boostsLeft });
-    } catch (error) {
-      console.error(error);
+      console.error("Boost error:", error);
       res.status(500).json({ error: "Server error" });
     }
   }
@@ -529,7 +568,10 @@ app.get("/api/explore/:telegramId", async (req, res) => {
 });
 
 // 10. Get likes received count
-app.get("/api/likes-count/:telegramId", async (req, res) => {
+app.get(
+  "/api/likes-count/:telegramId",
+  authorizeTelegramId((req) => req.params.telegramId),
+  async (req, res) => {
   const { telegramId } = req.params;
   try {
     const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
@@ -579,7 +621,10 @@ app.delete(
 );
 
 // 12. Get chat info (other user details in a match)
-app.get("/api/chat-info/:matchId", async (req, res) => {
+app.get(
+  "/api/chat-info/:matchId",
+  authorizeTelegramId((req) => req.query.telegramId),
+  async (req, res) => {
   const { matchId } = req.params;
   const { telegramId } = req.query;
   try {
@@ -591,6 +636,9 @@ app.get("/api/chat-info/:matchId", async (req, res) => {
       include: { user1: true, user2: true },
     });
     if (!match) return res.status(404).json({ error: "Match not found" });
+    if (match.user1Id !== user.id && match.user2Id !== user.id) {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     const other = withComputedOnline(match.user1Id === user.id ? match.user2 : match.user1);
     res.json({
@@ -638,7 +686,10 @@ app.get("/api/typing/:matchId", (req, res) => {
 });
 
 // 15. Who liked me (unmatched) — lightweight list used by Discover.
-app.get("/api/who-liked-me/:telegramId", async (req, res) => {
+app.get(
+  "/api/who-liked-me/:telegramId",
+  authorizeTelegramId((req) => req.params.telegramId),
+  async (req, res) => {
   const { telegramId } = req.params;
   try {
     const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
@@ -669,7 +720,10 @@ app.get("/api/who-liked-me/:telegramId", async (req, res) => {
 });
 
 // 16. Unread message count
-app.get("/api/unread/:telegramId", async (req, res) => {
+app.get(
+  "/api/unread/:telegramId",
+  authorizeTelegramId((req) => req.params.telegramId),
+  async (req, res) => {
   const { telegramId } = req.params;
   try {
     const user = await prisma.user.findUnique({ where: { telegramId: telegramId.toString() } });
