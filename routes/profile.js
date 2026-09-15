@@ -25,6 +25,7 @@ router.get("/stories/:telegramId", authorizeTelegramId((req) => req.params.teleg
       where: { expiresAt: { gt: new Date() } },
       include: { user: { select: publicUserSelect }, storyViews: { where: { viewerId: me.id }, select: { id: true } } },
       orderBy: { createdAt: "desc" },
+      take: 200,
     });
     const byUser = new Map();
     for (const s of stories) {
